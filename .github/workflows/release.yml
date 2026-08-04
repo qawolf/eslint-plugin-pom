@@ -1,0 +1,43 @@
+name: Release
+
+# Version-driven: publishes when the version in package.json is higher than the
+# version already on the registry. To cut a release, bump it and merge to main.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@qawolf"
+      - run: npm ci
+      - run: npm test
+      - name: Publish if the version was bumped
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          local_version=$(node -p "require('./package.json').version")
+          published=$(npm view "@qawolf/eslint-plugin-pom@$local_version" version 2>/dev/null || true)
+          if [ -n "$published" ]; then
+            echo "$local_version is already published; nothing to do."
+            exit 0
+          fi
+          npm publish
