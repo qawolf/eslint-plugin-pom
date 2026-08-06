@@ -26,39 +26,47 @@ AST work:
 
 ### Which files should the rule check?
 
-A rule sees every file in a workspace, so it has to recognise its own subject —
-and it is usually better to do that from the code than from the file path.
-
-Paths are not dependable. Most page objects sit in a `pages/` directory, but not
-all of them: an entry point often lives elsewhere, and layouts differ between
-workspaces. The class declaration is the more stable signal:
+A rule sees every file in a workspace, so it has to recognise its own subject.
+Page objects live under `src/pages/`, so gate on the path and bail out early:
 
 ```ts
-export class SignInPage extends BasePageObject { ... }
+create(context) {
+  if (!isPageObjectFile(context.filename)) return {};
+  return { MemberExpression(node) { ... } };
+}
 ```
 
-So check the superclass: `BasePageObject`, `EntryPointPageObject` or
-`SubPageObject`. It is right there in the AST and needs no type information.
-`no-inline-locator-in-page-object` is the worked example, and it handles the
-variations you would expect — `abstract class`, `export default class`, and the
-generic `extends SubPageObject<Parent>`.
+`isPageObjectFile` comes from `src/pageObject/index.js`. Use it rather than
+comparing paths yourself, because **no host passes the workspace path
+verbatim**:
 
-**Where this approach stops.** A page object that extends _another page object_
-names neither base class, so a superclass check does not match it:
+| Host                 | `context.filename`                                            |
+| -------------------- | ------------------------------------------------------------- |
+| Editor               | `file:///src/pages/home-page.ts`, percent-encoded per segment |
+| Agent                | `/src/pages/home-page.ts`                                     |
+| `RuleTester` default | `<input>`                                                     |
+
+A bare `context.filename.startsWith("src/pages/")` matches none of the three.
+The rule would pass its tests and report nothing in either host — and a rule that
+recognises nothing looks exactly like a rule that found no problems.
+
+Which is also why **every `RuleTester` case needs an explicit `filename`**. Omit
+it and the case is vacuous. Add a case for a file your rule should _not_ touch
+(`src/flows/checkout.flow.ts` is a good one), then break the gate on purpose and
+confirm both that case and the positive cases fail.
+
+**The trade-off.** Scoping by path means a class inside `src/pages/` that is not
+a page object is in scope too. In a directory reserved for page objects that is
+the more useful default. The alternative — matching `extends BasePageObject` /
+`EntryPointPageObject` / `SubPageObject` — is a tighter filter but misses a page
+object that extends _another page object_:
 
 ```ts
-export class AdminLoginPage extends LoginPage { ... } // not matched
+export class AdminLoginPage extends LoginPage { ... } // no base class named
 ```
 
-Following that chain means resolving an import, which needs type information a
-rule does not have. Every page object in the workspaces checked so far extends a
-base class directly, so this is a known blind spot rather than a common one — but
-say so in the rule rather than implying full coverage.
-
-One thing to watch. A rule that recognises nothing reports nothing, which looks
-exactly like a rule that found no problems. So add a `RuleTester` case for a file
-your rule should _not_ touch, then break the check on purpose and confirm that
-case fails.
+Following that chain needs type information a rule does not have. Path scoping
+covers it for free, and it is the same definition platform uses for a page file.
 
 ## Rule ids
 

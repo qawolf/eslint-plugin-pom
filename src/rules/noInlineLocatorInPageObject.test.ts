@@ -14,8 +14,17 @@ const ruleTester = new RuleTester({
 
 const inlineLocator = [{ messageId: "inlineLocator" }];
 
+const pagePath = "src/pages/sign-in-page.ts";
+
+/**
+ * Every case has to carry a filename: the rule is scoped to `src/pages/`, and
+ * RuleTester defaults to `<input>`, which would make each case vacuous.
+ */
 function pageObject(body: string, base = "BasePageObject") {
-  return `class SignInPage extends ${base} {\n${body}\n}`;
+  return {
+    code: `class SignInPage extends ${base} {\n${body}\n}`,
+    filename: pagePath,
+  };
 }
 
 ruleTester.run(
@@ -24,7 +33,7 @@ ruleTester.run(
   {
     invalid: [
       {
-        code: pageObject(`
+        ...pageObject(`
           async signIn() {
             await this.page.getByRole("button", { name: "Sign in" }).click();
           }
@@ -32,7 +41,7 @@ ruleTester.run(
         errors: inlineLocator,
       },
       {
-        code: pageObject(`
+        ...pageObject(`
           async search() {
             await this.page.locator("#search").fill("hello");
           }
@@ -40,7 +49,7 @@ ruleTester.run(
         errors: inlineLocator,
       },
       {
-        code: pageObject(`
+        ...pageObject(`
           async confirm() {
             await this.page.frameLocator("#f").getByRole("button").click();
           }
@@ -49,7 +58,7 @@ ruleTester.run(
       },
       {
         // A getter, but not one of the locator holders.
-        code: pageObject(`
+        ...pageObject(`
           private get header() {
             return this.page.getByRole("banner");
           }
@@ -58,7 +67,7 @@ ruleTester.run(
       },
       {
         // A plain method named `locators` is neither the getter nor a property.
-        code: pageObject(`
+        ...pageObject(`
           locators() {
             return { ok: this.page.getByRole("button") };
           }
@@ -66,16 +75,25 @@ ruleTester.run(
         errors: inlineLocator,
       },
       {
-        code: pageObject(
+        ...pageObject(
           `async start() { await this.page.getByText("Go").click(); }`,
           "EntryPointPageObject",
         ),
         errors: inlineLocator,
       },
       {
-        code: pageObject(
+        ...pageObject(
           `async start() { await this.page.getByText("Go").click(); }`,
           "SubPageObject<HomePage>",
+        ),
+        errors: inlineLocator,
+      },
+      {
+        // A page object extending another page object, which base-class scoping
+        // could not see.
+        ...pageObject(
+          `async signIn() { await this.page.getByRole("button").click(); }`,
+          "LoginPage",
         ),
         errors: inlineLocator,
       },
@@ -87,10 +105,27 @@ ruleTester.run(
           }
         };`,
         errors: inlineLocator,
+        filename: pagePath,
+      },
+      {
+        // The editor's spelling of the same file.
+        code: `class SignInPage extends BasePageObject {
+          async signIn() { await this.page.getByRole("button").click(); }
+        }`,
+        errors: inlineLocator,
+        filename: "file:///src/pages/auth/sign-in-page.ts",
+      },
+      {
+        // The agent's spelling.
+        code: `class SignInPage extends BasePageObject {
+          async signIn() { await this.page.getByRole("button").click(); }
+        }`,
+        errors: inlineLocator,
+        filename: "/src/pages/sign-in-page.ts",
       },
       {
         // Nested inside a callback in a method body -- still a method body.
-        code: pageObject(`
+        ...pageObject(`
           async pickFirst(names: string[]) {
             await Promise.all(
               names.map((name) => this.page.getByText(name).click()),
@@ -101,7 +136,7 @@ ruleTester.run(
       },
       {
         // A holder present does not excuse a locator built outside it.
-        code: pageObject(`
+        ...pageObject(`
           private get locators() {
             return { ok: this.page.getByRole("button") } as const;
           }
@@ -114,7 +149,7 @@ ruleTester.run(
     ],
     valid: [
       {
-        code: pageObject(`
+        ...pageObject(`
           private get locators() {
             return {
               emailInput: this.page.getByLabel("Email"),
@@ -125,7 +160,7 @@ ruleTester.run(
       },
       {
         // The entry is a function, which is why the check keys on the member.
-        code: pageObject(`
+        ...pageObject(`
           private get dynamicLocators() {
             return {
               airportOption: (airportName: string) =>
@@ -136,21 +171,21 @@ ruleTester.run(
       },
       {
         // The property form holds the same map.
-        code: pageObject(`
+        ...pageObject(`
           private readonly locators = {
             ok: this.page.getByRole("button"),
           } as const;
         `),
       },
       {
-        code: pageObject(`
+        ...pageObject(`
           private get selectors() {
             return { ok: this.page.locator("#ok") } as const;
           }
         `),
       },
       {
-        code: pageObject(`
+        ...pageObject(`
           private get dynamicSelectors() {
             return { row: (id: string) => this.page.locator(id) } as const;
           }
@@ -158,7 +193,7 @@ ruleTester.run(
       },
       {
         // Not locator builders, and they have no locator equivalent.
-        code: pageObject(`
+        ...pageObject(`
           async open(url: string) {
             await this.page.goto(url);
             await this.page.waitForLoadState();
@@ -167,7 +202,7 @@ ruleTester.run(
       },
       {
         // Narrowing off a locator already on the instance, not off `this.page`.
-        code: pageObject(`
+        ...pageObject(`
           async confirm() {
             await this.dialog.getByRole("button", { name: "OK" }).click();
           }
@@ -175,7 +210,7 @@ ruleTester.run(
       },
       {
         // Pins the documented `!` / `as` limitation.
-        code: pageObject(
+        ...pageObject(
           `async a() { await this.page!.getByRole("button").click(); }`,
         ),
       },
@@ -183,7 +218,7 @@ ruleTester.run(
         // A reference, not a call: nothing is being built. Covers both being
         // assigned and being handed to another function, which is still a
         // `CallExpression` parent but not its callee.
-        code: pageObject(`
+        ...pageObject(`
           async wire() {
             const build = this.page.getByRole;
             register(this.page.locator);
@@ -193,20 +228,25 @@ ruleTester.run(
       },
       {
         // A locator handed in rather than built from this.page.
-        code: pageObject(`
+        ...pageObject(`
           async clickIn(row: { getByRole(role: string): { click(): Promise<void> } }) {
             await row.getByRole("button").click();
           }
         `),
       },
       {
-        // Pins the documented blind spot, and covers any non-page-object class,
-        // which takes the same path.
-        code: `class AdminLoginPage extends LoginPage {
-          async signIn() {
-            await this.page.getByRole("button").click();
-          }
+        // Same code outside `src/pages/`. Flows build locators inline by
+        // design, so the rule has to stay out of them.
+        code: `class SignInPage extends BasePageObject {
+          async signIn() { await this.page.getByRole("button").click(); }
         }`,
+        filename: "src/flows/checkout.flow.ts",
+      },
+      {
+        // Not inside a class member: nothing to move a locator into, and the
+        // message would name a holder the file has no class to put one in.
+        code: `export const build = () => this.page.getByRole("button");`,
+        filename: pagePath,
       },
     ],
   },

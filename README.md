@@ -53,8 +53,8 @@ async signIn() {
 }
 ```
 
-Applies to classes extending `BasePageObject`, `EntryPointPageObject` or
-`SubPageObject`. `this.page.goto` and friends are untouched — only locator
-builders are reported, and only when built directly from `this.page`.
+Applies to `.ts` files under `src/pages/`. `this.page.goto` and friends are
+untouched — only locator builders are reported, and only when built directly
+from `this.page`.
 
 Ships at `warn`.

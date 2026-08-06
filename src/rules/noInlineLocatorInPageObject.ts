@@ -2,8 +2,8 @@ import type { Rule } from "eslint";
 
 import {
   enclosingClassMember,
-  enclosingPageObject,
   isLocatorHolder,
+  isPageObjectFile,
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
@@ -28,6 +28,8 @@ import type { PomLintRule } from "../types.js";
 export const noInlineLocatorInPageObjectRule: PomLintRule = {
   module: {
     create(context) {
+      if (!isPageObjectFile(context.filename)) return {};
+
       return {
         MemberExpression(node) {
           const name = locatorCallName(node);
@@ -84,7 +86,8 @@ function locatorCallName(node: Rule.Node): string | undefined {
  * `airportOption: (name: string) => this.page.getByText(name)`.
  */
 function isOutsideLocatorHolder(node: Rule.Node): boolean {
-  if (!enclosingPageObject(node)) return false;
+  const member = enclosingClassMember(node);
+  if (!member) return false;
 
-  return !isLocatorHolder(enclosingClassMember(node));
+  return !isLocatorHolder(member);
 }
