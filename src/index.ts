@@ -1,5 +1,6 @@
 import { noInlineLocatorInPageObjectRule } from "./rules/noInlineLocatorInPageObject.js";
 import { selectorGetterShapeRule } from "./rules/selectorGetterShape.js";
+import { selectorJsdocRule } from "./rules/selectorJsdoc.js";
 import type { PomLintRule } from "./types.js";
 
 export type { PomLintRule } from "./types.js";
@@ -14,6 +15,7 @@ export const rulePrefix = "@qawolf/pom-lint";
 const allRules: PomLintRule[] = [
   noInlineLocatorInPageObjectRule,
   selectorGetterShapeRule,
+  selectorJsdocRule,
 ];
 
 /** ESLint's plugin contract: unprefixed names, since the config supplies the prefix. */
