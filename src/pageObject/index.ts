@@ -49,6 +49,20 @@ const locatorHolderNames = new Set([
   "selectors",
 ]);
 
+export function isLocatorHolderName(name: string): boolean {
+  return locatorHolderNames.has(name);
+}
+
+/**
+ * Assignment widens `type` off the ESTree union, so a rule can test for a
+ * TypeScript-only node such as `TSAsExpression` without a cast.
+ */
+export function nodeType(node: object): string {
+  if (!("type" in node)) return "";
+  const type: unknown = node.type;
+  return typeof type === "string" ? type : "";
+}
+
 /** A getter or a property, so a plain method of that name is not a holder. */
 export function isLocatorHolder(member: Rule.Node | undefined): boolean {
   if (!member) return false;
