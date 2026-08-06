@@ -78,3 +78,21 @@ from there.
 
 Version-driven: bump `version` in `package.json` in a pull request, and merging
 to `main` publishes to GitHub Packages.
+
+**Adding or changing a rule needs two bumps, not one.**
+
+1. Bump `version` here, in the same pull request as the rule. Merging publishes
+   it. Without the bump nothing is published and the rule never leaves this
+   repo.
+2. Bump `@qawolf/eslint-plugin-pom` in `qawolf/platform` to the version you just
+   published, refresh the lockfile, and commit the regenerated
+   `ts-worker.js` — the editor's linter is a checked-in bundle, so a rule that
+   is only in the lockfile does not reach a QA engineer's editor.
+
+The second bump is what actually ships the rule. Skipping it leaves the rule
+published and unused, which looks identical to a rule that is not working.
+
+> **Access:** the platform bump needs write access to `qawolf/platform`, which
+> not everyone contributing rules here has. If you cannot open that pull
+> request, ask in #engineering — someone will need to grant access or land the
+> bump for you. Worth sorting out before you write a rule, not after.
