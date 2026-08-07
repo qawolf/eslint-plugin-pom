@@ -2,25 +2,29 @@ import type { Rule } from "eslint";
 
 const pagesDirectoryPrefix = "src/pages/";
 
-const fileUriScheme = "file:///";
-
 /**
- * The editor lints `file:///src/pages/home-page.ts`, the agent
- * `/src/pages/home-page.ts`, and `RuleTester` defaults to `<input>`. Not
- * decoded: `encodeURIComponent` leaves letters, `.` and `/` alone, so the prefix
- * and extension survive, and decoding can throw on a stray `%`.
+ * No host passes the workspace path verbatim: the editor lints
+ * `file:///src/pages/home-page.ts` percent-encoded per segment, the agent
+ * `/src/pages/home-page.ts`, a plain `eslint` run an absolute path, and
+ * `RuleTester` defaults to `<input>`.
+ *
+ * Matching a path segment rather than a prefix covers all of them, the `file://`
+ * scheme included, and is why an absolute path works -- anchoring at the start
+ * would silently never fire under plain ESLint. The leading `/` is what keeps
+ * `my-src/pages/` and `notsrc/pages/` out.
+ *
+ * Not percent-decoded: `encodeURIComponent` leaves letters, `.` and `/` alone,
+ * so the directory and extension survive encoding, and decoding could throw on
+ * a stray `%` mid-lint.
  */
-function normalizeFilename(filename: string): string {
-  const withoutScheme = filename.startsWith(fileUriScheme)
-    ? filename.slice(fileUriScheme.length)
-    : filename;
-
-  return withoutScheme.replace(/^\/+/, "");
-}
-
 export function isPageObjectFile(filename: string): boolean {
-  const path = normalizeFilename(filename);
-  return path.startsWith(pagesDirectoryPrefix) && path.endsWith(".ts");
+  const path = filename.replaceAll("\\", "/");
+  if (!path.endsWith(".ts")) return false;
+
+  return (
+    path.startsWith(pagesDirectoryPrefix) ||
+    path.includes(`/${pagesDirectoryPrefix}`)
+  );
 }
 
 /** `??=` keeps the innermost member, for a class nested inside a method. */

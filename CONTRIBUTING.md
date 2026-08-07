@@ -44,11 +44,14 @@ verbatim**:
 | -------------------- | ------------------------------------------------------------- |
 | Editor               | `file:///src/pages/home-page.ts`, percent-encoded per segment |
 | Agent                | `/src/pages/home-page.ts`                                     |
+| Plain `eslint`       | `/Users/qae/workspace/src/pages/home-page.ts`, or `C:\…`      |
 | `RuleTester` default | `<input>`                                                     |
 
-A bare `context.filename.startsWith("src/pages/")` matches none of the three.
-The rule would pass its tests and report nothing in either host — and a rule that
-recognises nothing looks exactly like a rule that found no problems.
+A bare `context.filename.startsWith("src/pages/")` matches **none** of these.
+The rule would pass its tests and report nothing anywhere it actually runs — and
+a rule that recognises nothing looks exactly like a rule that found no problems.
+`isPageObjectFile` matches `src/pages/` as a path segment, so the absolute form
+works too.
 
 Which is also why **every `RuleTester` case needs an explicit `filename`**. Omit
 it and the case is vacuous. Add a case for a file your rule should _not_ touch

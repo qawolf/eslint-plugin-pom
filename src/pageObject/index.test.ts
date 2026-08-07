@@ -24,6 +24,13 @@ describe("isPageObjectFile", () => {
     ["file:///src/pages/auth/sign-in-page.ts", "editor, nested"],
     ["/src/pages/auth/sign-in-page.ts", "agent, nested"],
     ["file:///src/pages/order%5B1%5D-page.ts", "editor, encoded segment"],
+    ["/Users/qae/workspace/src/pages/home-page.ts", "plain eslint, absolute"],
+    ["/home/runner/work/repo/src/pages/auth/sign-in-page.ts", "CI, absolute"],
+    ["C:\\Users\\qae\\workspace\\src\\pages\\home-page.ts", "Windows"],
+    [
+      "file:///C:/Users/qae/workspace/src/pages/home-page.ts",
+      "Windows file URI",
+    ],
   ])("accepts %s (%s)", (filename) => {
     expect(isPageObjectFile(filename)).toBe(true);
   });
@@ -33,6 +40,9 @@ describe("isPageObjectFile", () => {
     ["/src/lib/register-pages.ts", "lib"],
     ["file:///src/utilities/helpers.ts", "utility"],
     ["src/pages-legacy/home-page.ts", "sibling directory"],
+    ["/Users/qae/my-src/pages/home-page.ts", "absolute, sibling directory"],
+    ["/Users/qae/notsrc/pages/home-page.ts", "absolute, name ends in src"],
+    ["/Users/qae/src/pagesx/home-page.ts", "absolute, name starts with pages"],
     ["src/pages/home-page.js", "not TypeScript"],
     ["file:///src/pages/README.md", "not TypeScript"],
     ["<input>", "RuleTester default, so a case without a filename fails"],
