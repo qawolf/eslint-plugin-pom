@@ -43,7 +43,7 @@ export const noInlineLocatorInPageObjectRule: PomLintRule = {
     meta: {
       messages: {
         inlineLocator:
-          "Move this `{{name}}` call into the page object's `locators` or `dynamicLocators` (`selectors` on mobile) and reference it from here. A locator named for its purpose is fixed in one place when the markup changes; inline, it is invisible to every other method that needs the same element.",
+          "This `{{name}}` call builds a locator in the middle of a method. Give it a name in the `locators` getter -- `private get locators() { return { signInButton: this.page.{{name}}(...) } as const; }` -- and use `this.locators.signInButton` here instead. Then another method needing the same element reuses the name, and when the markup changes there is one line to fix rather than every place it was written out. Use `dynamicLocators` if the locator needs an argument, or `selectors` / `dynamicSelectors` on mobile.",
       },
     },
   },
