@@ -62,7 +62,7 @@ export const webFirstAssertionsRule: PomLintRule = {
     meta: {
       messages: {
         preferWebFirst:
-          "`expect(await locator.{{read}}())` reads once and compares once, so it fails whenever the page has not caught up yet. Use `await expect(locator).{{suggestion}}` if this is asserting that it is the case, or `await expect(locator).not.{{suggestion}}` if it is asserting the opposite. Either retries until it holds or the timeout expires.",
+          "`await locator.{{read}}()` runs before `expect` sees it, so `expect` only gets a plain value: it checks once, at that instant, and fails if the element has not reached that state yet. Pass the locator instead -- `await expect(locator).{{suggestion}}`, or `.not.{{suggestion}}` if this assertion is a negative one -- and it re-checks until it holds or the timeout expires.",
       },
     },
   },
