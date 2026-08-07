@@ -53,6 +53,87 @@ const locatorHolderNames = new Set([
   "selectors",
 ]);
 
+export function isLocatorHolderName(name: string): boolean {
+  return locatorHolderNames.has(name);
+}
+
+/**
+ * Assignment widens `type` off the ESTree union, so a rule can test for a
+ * TypeScript-only node such as `TSAsExpression` without a cast.
+ */
+export function nodeType(node: object): string {
+  if (!("type" in node)) return "";
+  const type: unknown = node.type;
+  return typeof type === "string" ? type : "";
+}
+
+/** Nodes that assert something about a type without changing the value. */
+const typeAssertionWrappers = new Set([
+  "TSAsExpression",
+  "TSNonNullExpression",
+  "TSSatisfiesExpression",
+  "TSTypeAssertion",
+]);
+
+/**
+ * The expression inside an `as` / `satisfies` / `!` / `<T>` wrapper, or undefined
+ * when this is not one. Returns `unknown` because none of those node types are in
+ * ESTree's union, so a typed return would need a cast at every call site.
+ */
+export function typeAssertionOperand(node: unknown): unknown {
+  if (!isObject(node)) return undefined;
+  if (!typeAssertionWrappers.has(nodeType(node))) return undefined;
+
+  return "expression" in node ? node.expression : undefined;
+}
+
+/** The expression with every type-assertion wrapper peeled off. */
+export function withoutTypeAssertions(node: unknown): unknown {
+  let current = node;
+
+  for (
+    let operand = typeAssertionOperand(current);
+    operand !== undefined;
+    operand = typeAssertionOperand(current)
+  )
+    current = operand;
+
+  return current;
+}
+
+/**
+ * True for `this.page`, including under any `!`, `as`, or `satisfies`. Those wrap
+ * the expression in a node the rule would otherwise fail to match, so an inline
+ * locator written `this.page!.getByRole(...)` would go unreported.
+ *
+ * `this.#page` and `this[page]` are not it: the first is a different, private
+ * field that happens to be spelled `page`, and the second is a dynamic lookup
+ * whose key is only known at runtime.
+ */
+export function isThisPageExpression(node: unknown): boolean {
+  const current = withoutTypeAssertions(node);
+
+  if (!isObject(current)) return false;
+  if (nodeType(current) !== "MemberExpression") return false;
+  if ("computed" in current && current.computed === true) return false;
+  if (!("object" in current) || !("property" in current)) return false;
+
+  const target = current.object;
+  const property = current.property;
+  if (!isObject(target) || !isObject(property)) return false;
+  if (nodeType(property) !== "Identifier") return false;
+
+  return (
+    nodeType(target) === "ThisExpression" &&
+    "name" in property &&
+    property.name === "page"
+  );
+}
+
+function isObject(value: unknown): value is object {
+  return typeof value === "object" && value !== null;
+}
+
 /** A getter or a property, so a plain method of that name is not a holder. */
 export function isLocatorHolder(member: Rule.Node | undefined): boolean {
   if (!member) return false;

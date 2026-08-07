@@ -54,7 +54,33 @@ async signIn() {
 ```
 
 Applies to `.ts` files under `src/pages/`. `this.page.goto` and friends are
-untouched — only locator builders are reported, and only when built directly
-from `this.page`.
+untouched — only locator builders are reported, and only when built from
+`this.page`, including through a `!` or an `as`.
+
+Ships at `warn`.
+
+### `selector-getter-shape`
+
+The locator holder is a private getter returning `as const`.
+
+```ts
+// Reported
+get locators() { ... }                          // not private
+locators() { ... }                              // not a getter
+private readonly locators = { ... } as const;   // a field, not a getter
+private get locators() { return { ... }; }      // missing `as const`
+
+// Expected
+private get locators() {
+  return { signInButton: this.page.getByRole("button") } as const;
+}
+```
+
+`as const` is what makes a typo in `this.locators.signInButon` a compile error
+rather than a failing test, and `private` keeps a flow from reaching past the
+page object into markup it is meant to hide.
+
+Applies to `.ts` files under `src/pages/`, to `locators` and `dynamicLocators`,
+and to the mobile `selectors` and `dynamicSelectors`.
 
 Ships at `warn`.

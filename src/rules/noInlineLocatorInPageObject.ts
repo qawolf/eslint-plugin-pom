@@ -4,6 +4,7 @@ import {
   enclosingClassMember,
   isLocatorHolder,
   isPageObjectFile,
+  isThisPageExpression,
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
@@ -52,7 +53,6 @@ export const noInlineLocatorInPageObjectRule: PomLintRule = {
   severity: "warn",
 };
 
-/** Misses `this.page!` and `(this.page as Page)`, which wrap the node. */
 function locatorCallName(node: Rule.Node): string | undefined {
   if (node.type !== "MemberExpression") return undefined;
   if (node.property.type !== "Identifier") return undefined;
@@ -65,12 +65,5 @@ function locatorCallName(node: Rule.Node): string | undefined {
     name === "locator" || name === "frameLocator" || name.startsWith("getBy");
   if (!builds) return undefined;
 
-  const target = node.object;
-  const isThisPage =
-    target.type === "MemberExpression" &&
-    target.object.type === "ThisExpression" &&
-    target.property.type === "Identifier" &&
-    target.property.name === "page";
-
-  return isThisPage ? name : undefined;
+  return isThisPageExpression(node.object) ? name : undefined;
 }
