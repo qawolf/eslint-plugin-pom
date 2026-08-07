@@ -92,7 +92,4 @@ to `main` publishes to GitHub Packages.
 The second bump is what actually ships the rule. Skipping it leaves the rule
 published and unused, which looks identical to a rule that is not working.
 
-> **Access:** the platform bump needs write access to `qawolf/platform`, which
-> not everyone contributing rules here has. If you cannot open that pull
-> request, ask in #engineering — someone will need to grant access or land the
-> bump for you. Worth sorting out before you write a rule, not after.
+> **Access:** if you cannot open that pull request, ask in #engineering.
