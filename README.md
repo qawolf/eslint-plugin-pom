@@ -31,6 +31,22 @@ in step. To pick rules individually, name them yourself instead:
 rules: { "@qawolf/pom-lint/no-inline-locator-in-page-object": "error" }
 ```
 
+### Without a config file
+
+A host that registers rules through `Linter.defineRules` has no `plugins` block
+to prefix the ids, so use `rulesById`, which is already prefixed:
+
+```js
+const linter = new Linter();
+linter.defineRules(pomLint.rulesById);
+linter.verify(source, { rules: pomLint.ruleSeverities }, { filename });
+```
+
+`rulesById` and `ruleSeverities` are keyed identically. Registering under one set
+of ids and enabling under another leaves the rules registered and switched off,
+which looks the same as a run that found nothing — so prefer these two over
+prefixing `rules` yourself.
+
 ## Rules
 
 ### `no-inline-locator-in-page-object`
