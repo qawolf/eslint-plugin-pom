@@ -213,6 +213,18 @@ ruleTester.run(
         `),
       },
       {
+        // A private field that happens to be spelled `page` is a different
+        // field, and a computed lookup's key is only known at runtime.
+        ...pageObject(
+          `#page: Page;\n          async a() { await this.#page.getByRole("button").click(); }`,
+        ),
+      },
+      {
+        ...pageObject(
+          `async a(page: string) { await this[page].getByRole("button").click(); }`,
+        ),
+      },
+      {
         // A `page` on something other than `this` is not this page object's.
         ...pageObject(
           `async a(helper: { page: Page }) { await helper.page.getByRole("button").click(); }`,

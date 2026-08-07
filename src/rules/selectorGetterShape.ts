@@ -5,6 +5,7 @@ import {
   isLocatorHolderName,
   isPageObjectFile,
   nodeType,
+  typeAssertionOperand,
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
@@ -114,12 +115,27 @@ function returnedExpression(node: Rule.Node): Expression | undefined {
   return undefined;
 }
 
-/** `{ … } as const` parses to a TSAsExpression naming the `const` type. */
+/**
+ * Walks the whole wrapper chain rather than only the outermost node, so
+ * `({ … } as const) satisfies Locators` still counts.
+ */
 function isAsConst(returned: Expression): boolean {
-  if (nodeType(returned) !== "TSAsExpression") return false;
-  if (!("typeAnnotation" in returned)) return false;
+  let current: unknown = returned;
 
-  const annotation: unknown = returned.typeAnnotation;
+  while (current !== undefined) {
+    if (assertsConstType(current)) return true;
+    current = typeAssertionOperand(current);
+  }
+
+  return false;
+}
+
+/** `{ … } as const` parses to a TSAsExpression naming the `const` type. */
+function assertsConstType(node: unknown): boolean {
+  if (typeof node !== "object" || node === null) return false;
+  if (!("typeAnnotation" in node)) return false;
+
+  const annotation: unknown = node.typeAnnotation;
   if (typeof annotation !== "object" || annotation === null) return false;
   if (nodeType(annotation) !== "TSTypeReference") return false;
   if (!("typeName" in annotation)) return false;

@@ -68,6 +68,13 @@ ruleTester.run("selector-getter-shape", selectorGetterShapeRule.module, {
       errors: [{ messageId: "missingAsConst" }],
     },
     {
+      // `satisfies` alone does not narrow the entries.
+      ...pageObject(
+        `private get locators() { return { ok: this.page.locator("#ok") } satisfies Locators; }`,
+      ),
+      errors: [{ messageId: "missingAsConst" }],
+    },
+    {
       // `as SomeType` is not `as const`.
       ...pageObject(
         `private get locators() { return { ok: this.page.locator("#ok") } as Locators; }`,
@@ -101,6 +108,17 @@ ruleTester.run("selector-getter-shape", selectorGetterShapeRule.module, {
     {
       ...pageObject(
         `private get dynamicSelectors() { return { ok: this.page.locator("#ok") } as const; }`,
+      ),
+    },
+    {
+      // `as const` under a `satisfies` is still `as const`.
+      ...pageObject(
+        `private get locators() { return ({ ok: this.page.locator("#ok") } as const) satisfies Locators; }`,
+      ),
+    },
+    {
+      ...pageObject(
+        `private get locators() { return ({ ok: this.page.locator("#ok") } satisfies Locators) as const; }`,
       ),
     },
     {

@@ -72,28 +72,52 @@ const typeAssertionWrappers = new Set([
 ]);
 
 /**
- * True for `this.page`, including under any `!`, `as`, or `satisfies`. Those
- * wrap the expression in a node the rule would otherwise fail to match, so an
- * inline locator written `this.page!.getByRole(...)` would go unreported.
+ * The expression inside an `as` / `satisfies` / `!` / `<T>` wrapper, or undefined
+ * when this is not one. Returns `unknown` because none of those node types are in
+ * ESTree's union, so a typed return would need a cast at every call site.
+ */
+export function typeAssertionOperand(node: unknown): unknown {
+  if (!isObject(node)) return undefined;
+  if (!typeAssertionWrappers.has(nodeType(node))) return undefined;
+
+  return "expression" in node ? node.expression : undefined;
+}
+
+/** The expression with every type-assertion wrapper peeled off. */
+export function withoutTypeAssertions(node: unknown): unknown {
+  let current = node;
+
+  for (
+    let operand = typeAssertionOperand(current);
+    operand !== undefined;
+    operand = typeAssertionOperand(current)
+  )
+    current = operand;
+
+  return current;
+}
+
+/**
+ * True for `this.page`, including under any `!`, `as`, or `satisfies`. Those wrap
+ * the expression in a node the rule would otherwise fail to match, so an inline
+ * locator written `this.page!.getByRole(...)` would go unreported.
  *
- * Returns a boolean rather than the unwrapped node: the wrapper types are not in
- * ESTree's union, so handing one back would need a cast at every call site.
+ * `this.#page` and `this[page]` are not it: the first is a different, private
+ * field that happens to be spelled `page`, and the second is a dynamic lookup
+ * whose key is only known at runtime.
  */
 export function isThisPageExpression(node: unknown): boolean {
-  let current: unknown = node;
-
-  while (isObject(current) && typeAssertionWrappers.has(nodeType(current))) {
-    if (!("expression" in current)) return false;
-    current = current.expression;
-  }
+  const current = withoutTypeAssertions(node);
 
   if (!isObject(current)) return false;
   if (nodeType(current) !== "MemberExpression") return false;
+  if ("computed" in current && current.computed === true) return false;
   if (!("object" in current) || !("property" in current)) return false;
 
   const target = current.object;
   const property = current.property;
   if (!isObject(target) || !isObject(property)) return false;
+  if (nodeType(property) !== "Identifier") return false;
 
   return (
     nodeType(target) === "ThisExpression" &&
