@@ -2,8 +2,6 @@ import { noInlineLocatorInPageObjectRule } from "./rules/noInlineLocatorInPageOb
 import { selectorGetterShapeRule } from "./rules/selectorGetterShape.js";
 import type { PomLintRule } from "./types.js";
 
-export type { PomLintRule } from "./types.js";
-
 /**
  * The name a config registers this plugin under. Deliberately not `@qawolf/pom`
  * -- that is a different, published package, and sharing the name would make a
@@ -22,18 +20,9 @@ export const rules = Object.fromEntries(
 );
 
 /**
- * The same modules keyed by the id a config sees. A host registering rules
- * through `Linter.defineRules` has no `plugins` block to do the prefixing, so
- * without this every such host reimplements it and can disagree with
- * `ruleSeverities` about what a rule is called.
- */
-export const rulesById = Object.fromEntries(
-  allRules.map((rule) => [`${rulePrefix}/${rule.name}`, rule.module]),
-);
-
-/**
- * Severities keyed the same way, so a consumer can spread this straight into
- * `rules` rather than restating a severity per rule.
+ * Severities keyed by the id `rules` registered under a `plugins` block, so a
+ * consumer can spread this straight into `rules` rather than restating a
+ * severity per rule.
  */
 export const ruleSeverities = Object.fromEntries(
   allRules.map((rule) => [`${rulePrefix}/${rule.name}`, rule.severity]),
