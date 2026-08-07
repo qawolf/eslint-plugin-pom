@@ -84,3 +84,30 @@ Applies to `.ts` files under `src/pages/`, to `locators` and `dynamicLocators`,
 and to the mobile `selectors` and `dynamicSelectors`.
 
 Ships at `warn`.
+
+### `web-first-assertions`
+
+Assert on the locator, not on a value read out of it.
+
+```ts
+// Reported
+expect(await this.locators.banner.isVisible()).toBe(true);
+expect(await this.locators.rows.count()).toBe(3);
+
+// Expected
+await expect(this.locators.banner).toBeVisible();
+await expect(this.locators.rows).toHaveCount(3);
+```
+
+`expect(await ...)` reads once and compares once, so it fails whenever the page
+has not caught up yet — the usual source of a test that passes locally and fails
+in CI. The web-first form retries until it holds or the timeout expires.
+
+Ten reads are covered, each with its own suggested matcher in the message:
+`isVisible`, `isEnabled`, `isDisabled`, `isChecked`, `isHidden`, `innerText`,
+`textContent`, `count`, `getAttribute`, `inputValue`.
+
+Applies to `.ts` files under `src/pages/`. Reading a value to use it is fine —
+only reads inside `expect(await ...)` are reported.
+
+Ships at `warn`.
