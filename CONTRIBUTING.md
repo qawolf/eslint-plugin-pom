@@ -79,17 +79,32 @@ from there.
 Version-driven: bump `version` in `package.json` in a pull request, and merging
 to `main` publishes to GitHub Packages.
 
-**Adding or changing a rule needs two bumps, not one.**
+**Adding or changing a rule takes two pull requests, not one.**
 
 1. Bump `version` here, in the same pull request as the rule. Merging publishes
    it. Without the bump nothing is published and the rule never leaves this
    repo.
-2. Bump `@qawolf/eslint-plugin-pom` in `qawolf/platform` to the version you just
-   published, refresh the lockfile, and commit the regenerated
-   `ts-worker.js` — the editor's linter is a checked-in bundle, so a rule that
-   is only in the lockfile does not reach a QA engineer's editor.
+2. In `qawolf/platform`, install the published version and commit both the
+   lockfile change and the regenerated `ts-worker.js`:
 
-The second bump is what actually ships the rule. Skipping it leaves the rule
-published and unused, which looks identical to a rule that is not working.
+   ```bash
+   npm install @qawolf/eslint-plugin-pom@latest
+   npx nx run apex-frontend:gen:ts-worker
+   ```
+
+   The dependency _range_ usually needs no edit — a new version inside the
+   existing caret satisfies it. The lockfile is what has to move.
+
+The second pull request is what actually ships the rule. Skipping it leaves the
+rule published and unused, which looks identical to a rule that is not working.
+
+**Platform cannot pick a rule up on its own**, so there is no version of this
+where you skip step 2:
+
+- CI installs with `npm ci`, which resolves the lockfile exactly. A rebuild
+  re-downloads the same version, caret range or not.
+- The editor's linter is a committed bundle. `apex-frontend`'s `build` does not
+  depend on `gen:ts-worker`, so nothing regenerates it on deploy, and the
+  generated-output drift check fails if the committed copy is stale.
 
 > **Access:** if you cannot open that pull request, ask in #engineering.
