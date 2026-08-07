@@ -88,7 +88,7 @@ export function typeAssertionOperand(node: unknown): unknown {
 }
 
 /** The expression with every type-assertion wrapper peeled off. */
-export function withoutTypeAssertions(node: unknown): unknown {
+function withoutTypeAssertions(node: unknown): unknown {
   let current = node;
 
   for (
