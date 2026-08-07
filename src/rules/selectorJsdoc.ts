@@ -48,7 +48,7 @@ export const selectorJsdocRule: PomLintRule = {
     meta: {
       messages: {
         missingJsdoc:
-          "Describe what `{{name}}` targets in a `/** ... */` comment above it. The selector says how to find the element; the comment says which element it is, which is what someone needs when the markup changes and the selector stops matching.",
+          "Add a `/** ... */` comment above `{{name}}` saying which element on the page it points at -- for example `/** The primary submit button in the sign-in card. */`. The selector says where the element was; the comment says what it is, which is what the next person needs when the markup changes and this selector stops matching anything.",
       },
     },
   },
