@@ -83,6 +83,33 @@ ruleTester.run(
         errors: inlineLocator,
       },
       {
+        // `!`, `as` and `satisfies` wrap `this.page` in a node the shape match
+        // would otherwise miss.
+        ...pageObject(
+          `async a() { await this.page!.getByRole("button").click(); }`,
+        ),
+        errors: inlineLocator,
+      },
+      {
+        ...pageObject(
+          `async a() { await (this.page as Page).getByRole("button").click(); }`,
+        ),
+        errors: inlineLocator,
+      },
+      {
+        ...pageObject(
+          `async a() { await (this.page satisfies Page).getByRole("button").click(); }`,
+        ),
+        errors: inlineLocator,
+      },
+      {
+        // Nested wrappers.
+        ...pageObject(
+          `async a() { await (this.page! as Page).getByRole("button").click(); }`,
+        ),
+        errors: inlineLocator,
+      },
+      {
         // Extends another page object, the blind spot under base-class scoping.
         ...pageObject(
           `async signIn() { await this.page.getByRole("button").click(); }`,
@@ -186,18 +213,18 @@ ruleTester.run(
         `),
       },
       {
+        // A `page` on something other than `this` is not this page object's.
+        ...pageObject(
+          `async a(helper: { page: Page }) { await helper.page.getByRole("button").click(); }`,
+        ),
+      },
+      {
         // Narrowed off an instance locator, not off `this.page`.
         ...pageObject(`
           async confirm() {
             await this.dialog.getByRole("button", { name: "OK" }).click();
           }
         `),
-      },
-      {
-        // The `!` wraps the node, so the rule misses it.
-        ...pageObject(
-          `async a() { await this.page!.getByRole("button").click(); }`,
-        ),
       },
       {
         // References, not calls: nothing is built.

@@ -63,6 +63,49 @@ export function nodeType(node: object): string {
   return typeof type === "string" ? type : "";
 }
 
+/** Nodes that assert something about a type without changing the value. */
+const typeAssertionWrappers = new Set([
+  "TSAsExpression",
+  "TSNonNullExpression",
+  "TSSatisfiesExpression",
+  "TSTypeAssertion",
+]);
+
+/**
+ * True for `this.page`, including under any `!`, `as`, or `satisfies`. Those
+ * wrap the expression in a node the rule would otherwise fail to match, so an
+ * inline locator written `this.page!.getByRole(...)` would go unreported.
+ *
+ * Returns a boolean rather than the unwrapped node: the wrapper types are not in
+ * ESTree's union, so handing one back would need a cast at every call site.
+ */
+export function isThisPageExpression(node: unknown): boolean {
+  let current: unknown = node;
+
+  while (isObject(current) && typeAssertionWrappers.has(nodeType(current))) {
+    if (!("expression" in current)) return false;
+    current = current.expression;
+  }
+
+  if (!isObject(current)) return false;
+  if (nodeType(current) !== "MemberExpression") return false;
+  if (!("object" in current) || !("property" in current)) return false;
+
+  const target = current.object;
+  const property = current.property;
+  if (!isObject(target) || !isObject(property)) return false;
+
+  return (
+    nodeType(target) === "ThisExpression" &&
+    "name" in property &&
+    property.name === "page"
+  );
+}
+
+function isObject(value: unknown): value is object {
+  return typeof value === "object" && value !== null;
+}
+
 /** A getter or a property, so a plain method of that name is not a holder. */
 export function isLocatorHolder(member: Rule.Node | undefined): boolean {
   if (!member) return false;
