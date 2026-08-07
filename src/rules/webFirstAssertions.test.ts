@@ -42,12 +42,14 @@ ruleTester.run("web-first-assertions", webFirstAssertionsRule.module, {
       errors: preferWebFirst,
     },
     {
+      // The compared value moves into the matcher, so the suggestion carries
+      // its argument shape rather than empty parens.
       ...pageObject(`
         async assertRows() {
           expect(await this.locators.rows.count()).toBe(3);
         }
       `),
-      errors: preferWebFirst,
+      errors: [{ message: /toHaveCount\(expected\)/ }],
     },
     {
       ...pageObject(`
@@ -66,12 +68,15 @@ ruleTester.run("web-first-assertions", webFirstAssertionsRule.module, {
       errors: preferWebFirst,
     },
     {
+      // A negated comparison. The rule ships no autofix, so the message is the
+      // whole fix -- it has to name `.not`, or applying it literally inverts
+      // the assertion.
       ...pageObject(`
         async assertChecked() {
           expect(await this.locators.box.isChecked()).toBe(false);
         }
       `),
-      errors: preferWebFirst,
+      errors: [{ message: /\.not\.toBeChecked\(\)/ }],
     },
     {
       code: `class SignInPage extends BasePageObject {

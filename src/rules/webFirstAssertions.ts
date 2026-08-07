@@ -1,17 +1,21 @@
 import { isPageObjectFile } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
+/**
+ * Each suggestion carries its argument shape, since the value being compared
+ * moves out of `expect(...)` and into the matcher.
+ */
 const webFirstEquivalents = new Map([
-  ["count", "toHaveCount()"],
-  ["getAttribute", "toHaveAttribute()"],
-  ["innerText", "toHaveText()"],
-  ["inputValue", "toHaveValue()"],
+  ["count", "toHaveCount(expected)"],
+  ["getAttribute", "toHaveAttribute(name, expected)"],
+  ["innerText", "toHaveText(expected)"],
+  ["inputValue", "toHaveValue(expected)"],
   ["isChecked", "toBeChecked()"],
   ["isDisabled", "toBeDisabled()"],
   ["isEnabled", "toBeEnabled()"],
   ["isHidden", "toBeHidden()"],
   ["isVisible", "toBeVisible()"],
-  ["textContent", "toHaveText()"],
+  ["textContent", "toHaveText(expected)"],
 ]);
 
 /**
@@ -58,7 +62,7 @@ export const webFirstAssertionsRule: PomLintRule = {
     meta: {
       messages: {
         preferWebFirst:
-          "`expect(await ....{{read}}())` reads the value once, so it fails if the page has not caught up yet. Use `await expect(locator).{{suggestion}}` instead, which retries until it holds or the timeout expires.",
+          "`expect(await locator.{{read}}())` reads once and compares once, so it fails whenever the page has not caught up yet. Use `await expect(locator).{{suggestion}}` instead, which retries until it holds or the timeout expires. Keep the assertion's sense: a comparison against `false` becomes `.not.{{suggestion}}`.",
       },
     },
   },
