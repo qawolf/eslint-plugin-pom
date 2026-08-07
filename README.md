@@ -93,15 +93,22 @@ Assert on the locator, not on a value read out of it.
 // Reported
 expect(await this.locators.banner.isVisible()).toBe(true);
 expect(await this.locators.rows.count()).toBe(3);
+expect(await this.locators.box.isChecked()).toBe(false);
 
 // Expected
 await expect(this.locators.banner).toBeVisible();
 await expect(this.locators.rows).toHaveCount(3);
+await expect(this.locators.box).not.toBeChecked();
 ```
 
-`expect(await ...)` reads once and compares once, so it fails whenever the page
-has not caught up yet — the usual source of a test that passes locally and fails
-in CI. The web-first form retries until it holds or the timeout expires.
+The `await` runs before `expect` sees it, so `expect` only ever gets a plain
+value: it checks once, at that instant, and fails if the element has not reached
+that state yet — the usual source of a test that passes locally and fails in CI.
+Passing the locator instead lets Playwright re-check until it holds or the
+timeout expires.
+
+Note the third pair: the matcher has to keep the assertion pointing the same way,
+so a comparison against `false` becomes `.not.`.
 
 Ten reads are covered, each with its own suggested matcher in the message:
 `isVisible`, `isEnabled`, `isDisabled`, `isChecked`, `isHidden`, `innerText`,
