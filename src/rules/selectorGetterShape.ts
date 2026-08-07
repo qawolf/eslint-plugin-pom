@@ -69,13 +69,13 @@ export const selectorGetterShapeRule: PomLintRule = {
     meta: {
       messages: {
         missingAsConst:
-          "Return the `{{name}}` object `as const`. Without it every entry widens to `Locator`, so a typo in `this.{{name}}.someName` is only caught when the test runs.",
+          "Add `as const` to the object `{{name}}` returns: `return { ... } as const;`. Without it TypeScript only knows the object holds locators, not which names are in it, so a typo like `this.{{name}}.signInButtn` compiles and fails when the test runs instead of being underlined in the editor.",
         mustBeGetter:
-          "Make `{{name}}` a getter (`private get {{name}}()`), not a method. Every page object spells this the same way, and callers read `this.{{name}}.signInButton` rather than calling it.",
+          "`{{name}}` is a method, so reading a locator from it means calling it: `this.{{name}}().signInButton`. Change it to `private get {{name}}()` and it reads `this.{{name}}.signInButton`, the same as every other page object.",
         mustBePrivate:
-          "Mark the `{{name}}` getter `private`. Locators are this page object's own business — a flow that reaches into them is coupled to markup the page object exists to hide.",
+          "Add `private` to the `{{name}}` getter. While it is public a flow can reach in and use these locators directly, and then a markup change breaks the flow as well as this file. Only this page object's own methods should touch them.",
         useGetter:
-          "Make `{{name}}` a `private get {{name}}()` getter rather than a field, so it matches every other page object and is evaluated on access.",
+          "`{{name}}` is a field. Change it to `private get {{name}}()` returning the same object, so it matches every other page object and is built each time it is read rather than once when the page object is constructed.",
       },
     },
   },
