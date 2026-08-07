@@ -18,8 +18,18 @@ export const rules = Object.fromEntries(
 );
 
 /**
- * Severities keyed by the id a config sees, so a consumer can spread this
- * straight into `rules` rather than restating a severity per rule.
+ * The same modules keyed by the id a config sees. A host registering rules
+ * through `Linter.defineRules` has no `plugins` block to do the prefixing, so
+ * without this every such host reimplements it and can disagree with
+ * `ruleSeverities` about what a rule is called.
+ */
+export const rulesById = Object.fromEntries(
+  allRules.map((rule) => [`${rulePrefix}/${rule.name}`, rule.module]),
+);
+
+/**
+ * Severities keyed the same way, so a consumer can spread this straight into
+ * `rules` rather than restating a severity per rule.
  */
 export const ruleSeverities = Object.fromEntries(
   allRules.map((rule) => [`${rulePrefix}/${rule.name}`, rule.severity]),

@@ -4,7 +4,6 @@ import { createRequire } from "node:module";
 import { noInlineLocatorInPageObjectRule } from "./noInlineLocatorInPageObject.js";
 
 // RuleTester takes the parser as a resolved path, and this package is ESM.
-// A Node built-in is fine here: only the rules are constrained, not the tests.
 const require = createRequire(import.meta.url);
 
 const ruleTester = new RuleTester({
@@ -14,8 +13,14 @@ const ruleTester = new RuleTester({
 
 const inlineLocator = [{ messageId: "inlineLocator" }];
 
+const pagePath = "src/pages/sign-in-page.ts";
+
+/** A filename is required: RuleTester defaults to `<input>`, which is out of scope. */
 function pageObject(body: string, base = "BasePageObject") {
-  return `class SignInPage extends ${base} {\n${body}\n}`;
+  return {
+    code: `class SignInPage extends ${base} {\n${body}\n}`,
+    filename: pagePath,
+  };
 }
 
 ruleTester.run(
@@ -24,7 +29,7 @@ ruleTester.run(
   {
     invalid: [
       {
-        code: pageObject(`
+        ...pageObject(`
           async signIn() {
             await this.page.getByRole("button", { name: "Sign in" }).click();
           }
@@ -32,7 +37,7 @@ ruleTester.run(
         errors: inlineLocator,
       },
       {
-        code: pageObject(`
+        ...pageObject(`
           async search() {
             await this.page.locator("#search").fill("hello");
           }
@@ -40,7 +45,7 @@ ruleTester.run(
         errors: inlineLocator,
       },
       {
-        code: pageObject(`
+        ...pageObject(`
           async confirm() {
             await this.page.frameLocator("#f").getByRole("button").click();
           }
@@ -48,8 +53,7 @@ ruleTester.run(
         errors: inlineLocator,
       },
       {
-        // A getter, but not one of the locator holders.
-        code: pageObject(`
+        ...pageObject(`
           private get header() {
             return this.page.getByRole("banner");
           }
@@ -57,8 +61,7 @@ ruleTester.run(
         errors: inlineLocator,
       },
       {
-        // A plain method named `locators` is neither the getter nor a property.
-        code: pageObject(`
+        ...pageObject(`
           locators() {
             return { ok: this.page.getByRole("button") };
           }
@@ -66,31 +69,52 @@ ruleTester.run(
         errors: inlineLocator,
       },
       {
-        code: pageObject(
+        ...pageObject(
           `async start() { await this.page.getByText("Go").click(); }`,
           "EntryPointPageObject",
         ),
         errors: inlineLocator,
       },
       {
-        code: pageObject(
+        ...pageObject(
           `async start() { await this.page.getByText("Go").click(); }`,
           "SubPageObject<HomePage>",
         ),
         errors: inlineLocator,
       },
       {
-        // A class expression is still a page object.
+        // Extends another page object, the blind spot under base-class scoping.
+        ...pageObject(
+          `async signIn() { await this.page.getByRole("button").click(); }`,
+          "LoginPage",
+        ),
+        errors: inlineLocator,
+      },
+      {
         code: `const SignInPage = class extends BasePageObject {
           async signIn() {
             await this.page.getByRole("button").click();
           }
         };`,
         errors: inlineLocator,
+        filename: pagePath,
       },
       {
-        // Nested inside a callback in a method body -- still a method body.
-        code: pageObject(`
+        code: `class SignInPage extends BasePageObject {
+          async signIn() { await this.page.getByRole("button").click(); }
+        }`,
+        errors: inlineLocator,
+        filename: "file:///src/pages/auth/sign-in-page.ts",
+      },
+      {
+        code: `class SignInPage extends BasePageObject {
+          async signIn() { await this.page.getByRole("button").click(); }
+        }`,
+        errors: inlineLocator,
+        filename: "/src/pages/sign-in-page.ts",
+      },
+      {
+        ...pageObject(`
           async pickFirst(names: string[]) {
             await Promise.all(
               names.map((name) => this.page.getByText(name).click()),
@@ -100,8 +124,7 @@ ruleTester.run(
         errors: inlineLocator,
       },
       {
-        // A holder present does not excuse a locator built outside it.
-        code: pageObject(`
+        ...pageObject(`
           private get locators() {
             return { ok: this.page.getByRole("button") } as const;
           }
@@ -114,7 +137,7 @@ ruleTester.run(
     ],
     valid: [
       {
-        code: pageObject(`
+        ...pageObject(`
           private get locators() {
             return {
               emailInput: this.page.getByLabel("Email"),
@@ -124,8 +147,7 @@ ruleTester.run(
         `),
       },
       {
-        // The entry is a function, which is why the check keys on the member.
-        code: pageObject(`
+        ...pageObject(`
           private get dynamicLocators() {
             return {
               airportOption: (airportName: string) =>
@@ -135,30 +157,28 @@ ruleTester.run(
         `),
       },
       {
-        // The property form holds the same map.
-        code: pageObject(`
+        ...pageObject(`
           private readonly locators = {
             ok: this.page.getByRole("button"),
           } as const;
         `),
       },
       {
-        code: pageObject(`
+        ...pageObject(`
           private get selectors() {
             return { ok: this.page.locator("#ok") } as const;
           }
         `),
       },
       {
-        code: pageObject(`
+        ...pageObject(`
           private get dynamicSelectors() {
             return { row: (id: string) => this.page.locator(id) } as const;
           }
         `),
       },
       {
-        // Not locator builders, and they have no locator equivalent.
-        code: pageObject(`
+        ...pageObject(`
           async open(url: string) {
             await this.page.goto(url);
             await this.page.waitForLoadState();
@@ -166,24 +186,22 @@ ruleTester.run(
         `),
       },
       {
-        // Narrowing off a locator already on the instance, not off `this.page`.
-        code: pageObject(`
+        // Narrowed off an instance locator, not off `this.page`.
+        ...pageObject(`
           async confirm() {
             await this.dialog.getByRole("button", { name: "OK" }).click();
           }
         `),
       },
       {
-        // Pins the documented `!` / `as` limitation.
-        code: pageObject(
+        // The `!` wraps the node, so the rule misses it.
+        ...pageObject(
           `async a() { await this.page!.getByRole("button").click(); }`,
         ),
       },
       {
-        // A reference, not a call: nothing is being built. Covers both being
-        // assigned and being handed to another function, which is still a
-        // `CallExpression` parent but not its callee.
-        code: pageObject(`
+        // References, not calls: nothing is built.
+        ...pageObject(`
           async wire() {
             const build = this.page.getByRole;
             register(this.page.locator);
@@ -192,21 +210,23 @@ ruleTester.run(
         `),
       },
       {
-        // A locator handed in rather than built from this.page.
-        code: pageObject(`
+        ...pageObject(`
           async clickIn(row: { getByRole(role: string): { click(): Promise<void> } }) {
             await row.getByRole("button").click();
           }
         `),
       },
       {
-        // Pins the documented blind spot, and covers any non-page-object class,
-        // which takes the same path.
-        code: `class AdminLoginPage extends LoginPage {
-          async signIn() {
-            await this.page.getByRole("button").click();
-          }
+        // Flows build locators inline by design.
+        code: `class SignInPage extends BasePageObject {
+          async signIn() { await this.page.getByRole("button").click(); }
         }`,
+        filename: "src/flows/checkout.flow.ts",
+      },
+      {
+        // No enclosing class member, so there is no holder to move it into.
+        code: `export const build = () => this.page.getByRole("button");`,
+        filename: pagePath,
       },
     ],
   },
