@@ -12,8 +12,9 @@ it("keys severities by the id a config will see", () => {
 });
 
 // A host using `Linter.defineRules` registers `rulesById` and enables
-// `ruleSeverities`. If those two disagree on an id, the rule is registered and
-// never enabled -- which looks exactly like a rule that found nothing.
+// `ruleSeverities`. ESLint reports an enabled id it cannot find, so a mismatch
+// is loud; what is silent is registering a rule nothing enables, which this
+// keeps from happening by construction.
 it("keys rulesById the same way as ruleSeverities", () => {
   expect(Object.keys(rulesById)).toEqual(Object.keys(ruleSeverities));
 

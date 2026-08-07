@@ -42,10 +42,12 @@ linter.defineRules(pomLint.rulesById);
 linter.verify(source, { rules: pomLint.ruleSeverities }, { filename });
 ```
 
-`rulesById` and `ruleSeverities` are keyed identically. Registering under one set
-of ids and enabling under another leaves the rules registered and switched off,
-which looks the same as a run that found nothing — so prefer these two over
-prefixing `rules` yourself.
+`rulesById` and `ruleSeverities` are keyed identically, so the two cannot drift
+apart. Prefer them over prefixing `rules` yourself, because the two ways of
+getting it wrong are not equally obvious: an id you enable but never register is
+reported as `Definition for rule '...' was not found`, while rules you register
+and never enable say nothing at all — the run comes back clean because none of
+them ran.
 
 ## Rules
 
