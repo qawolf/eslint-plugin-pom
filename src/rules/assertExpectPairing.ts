@@ -45,7 +45,7 @@ export const assertExpectPairingRule: PomLintRule = {
     meta: {
       messages: {
         expectOutsideAssert:
-          "`{{name}}` performs an action and asserts. Move the assertion into `{{suggestion}}` so a flow can act without also asserting, and reads as arrange-act-assert. Then call `{{suggestion}}` from the flow that relied on it -- moving the assertion out without calling it anywhere leaves a flow that checks nothing and still passes.",
+          "`{{name}}` does something to the page and also asserts. Leave the actions here and move this `expect` into a new `{{suggestion}}` method, then call `{{suggestion}}` from the flow. Flows are written Arrange / Act / Assert, so a flow that only wants the action currently gets the assertion too and cannot avoid it. Do call the new method somewhere -- if the assertion moves out and nothing calls it, the flow passes while checking nothing.",
       },
     },
   },
