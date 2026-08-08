@@ -1,6 +1,6 @@
 {
   "name": "@qawolf/eslint-plugin-pom",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "ESLint rules for QA Wolf page objects",
   "license": "MIT",
   "repository": {
@@ -53,6 +53,6 @@
     "typescript": "^5.7.2"
   },
   "engines": {
-    "node": ">=22.22.0 <25"
+    "node": ">=20.19.0 <25"
   }
 }
