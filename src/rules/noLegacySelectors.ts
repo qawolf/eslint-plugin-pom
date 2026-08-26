@@ -50,11 +50,11 @@ export const noLegacySelectorsRule: PomLintRule = {
     meta: {
       messages: {
         noChainCombinator:
-          '`{{text}}` uses `>>`, old Playwright syntax for putting two selectors in one string. Write them as two calls instead: `.locator("form").locator("button")`. If you are migrating existing code, only rewrite this when the new version finds the same element -- do not change what the test acts on to satisfy the rule.',
+          '`{{text}}` uses `>>`, old Playwright syntax for two selectors in one string. Chain them instead: `.locator("form").locator("button")`. Only rewrite it when the new form finds the same element -- satisfying this rule is not a reason to change what the test acts on.',
         noLegacyEngine:
-          '`{{text}}` uses an old Playwright engine prefix (`css=`, `text=`, `id=`). Current Playwright takes a plain CSS selector or a `getBy*` method: `text=Sign in` becomes `getByText("Sign in")`, `id=submit` becomes `#submit`, and `css=` can simply be dropped. If you are migrating existing code, only rewrite this when the new version finds the same element.',
+          '`{{text}}` uses an old Playwright engine prefix. Current Playwright takes a plain CSS selector or a `getBy*` method: `text=Sign in` becomes `getByText("Sign in")`, `id=submit` becomes `#submit`, and `css=` can be dropped. Only rewrite it when the new form finds the same element.',
         noXpath:
-          "`{{text}}` is XPath. It describes a path through the page structure, so it breaks as soon as anything is wrapped or moved, and it cannot see inside a shadow DOM (components that hide their own markup). Use `getByRole`, `getByText`, or a CSS selector on something stable like a test id. If you are migrating existing code, only rewrite this when the new version finds the same element.",
+          "`{{text}}` is XPath, which describes a path through the markup: it breaks as soon as anything is wrapped or moved, and it cannot see into a shadow DOM. Use `getByRole`, `getByText`, or a CSS selector on something stable like a test id. Only rewrite it when the new form finds the same element.",
       },
     },
   },
