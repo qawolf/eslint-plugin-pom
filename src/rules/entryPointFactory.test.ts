@@ -25,7 +25,6 @@ ruleTester.run("entry-point-factory", entryPointFactoryRule.module, {
       filename: pagePath,
     },
     {
-      // An instance method named create is not the factory.
       code: `export class SignInPage extends EntryPointPageObject {
         async create() { return this; }
       }`,
@@ -33,7 +32,6 @@ ruleTester.run("entry-point-factory", entryPointFactoryRule.module, {
       filename: pagePath,
     },
     {
-      // A static field is not a method.
       code: `export class SignInPage extends EntryPointPageObject {
         static create = 1;
       }`,
@@ -41,7 +39,6 @@ ruleTester.run("entry-point-factory", entryPointFactoryRule.module, {
       filename: pagePath,
     },
     {
-      // A static method, but not the factory.
       code: `export class SignInPage extends EntryPointPageObject {
         static async open(): Promise<SignInPage> { return this.build(); }
       }`,
@@ -72,7 +69,6 @@ ruleTester.run("entry-point-factory", entryPointFactoryRule.module, {
       filename: pagePath,
     },
     {
-      // A non-async static factory still is one.
       code: `export class SignInPage extends EntryPointPageObject {
         static create(): SignInPage { return new SignInPage(page); }
       }`,
@@ -92,12 +88,10 @@ ruleTester.run("entry-point-factory", entryPointFactoryRule.module, {
       filename: pagePath,
     },
     {
-      // Not a page object at all.
       code: `export class Helper { async run() {} }`,
       filename: pagePath,
     },
     {
-      // Outside `src/pages/`.
       code: `export class SignInPage extends EntryPointPageObject {}`,
       filename: "src/flows/checkout.flow.ts",
     },
