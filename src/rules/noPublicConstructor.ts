@@ -41,7 +41,7 @@ export const noPublicConstructorRule: PomLintRule = {
     meta: {
       messages: {
         publicConstructor:
-          "This constructor is public, while the one it overrides on `BasePageObject` is `protected`. Public means any code can call `new` on this page object and get an instance without going through the page registry that `this.create()` uses. If the body only calls `super(page)`, delete the whole constructor -- it is inherited, so nothing changes. If it does more than that, add `protected` in front.",
+          "This constructor is public, but the one it overrides on `BasePageObject` is `protected`, so this lets any code call `new` and skip the registry. If the body only calls `super(page)`, delete the constructor -- it is inherited either way. Otherwise put `protected` in front of it.",
       },
     },
   },
