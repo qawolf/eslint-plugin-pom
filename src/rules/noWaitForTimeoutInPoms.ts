@@ -52,7 +52,7 @@ export const noWaitForTimeoutInPomsRule: PomLintRule = {
     meta: {
       messages: {
         bannedWait:
-          "`{{method}}()` should not be used here -- {{reason}}. Wait for the thing this was really waiting for: `await this.locators.someElement.waitFor()` for an element, `await this.page.waitForURL(pattern)` for a navigation, or a web-first `await expect(...)` for a state. Each of those keeps checking until it is true or the timeout runs out. Work out what the wait was covering rather than deleting it -- delete it and the test passes on a fast machine and fails in CI.",
+          "`{{method}}()` waits for the wrong thing -- {{reason}}. Wait on the condition instead: `await this.locators.someElement.waitFor()` for an element, `await this.page.waitForURL(pattern)` after a navigation, or `await expect(...)` for a state. If nothing observable covers it, keep the sleep and say on the line above what it is waiting on.",
       },
     },
   },
