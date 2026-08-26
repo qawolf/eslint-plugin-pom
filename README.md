@@ -33,6 +33,45 @@ rules: { "@qawolf/pom-lint/no-inline-locator-in-page-object": "error" }
 
 ## Rules
 
+### `assert-expect-pairing`
+
+Only `assert*` methods hold assertions.
+
+```ts
+// Reported
+async signIn() {
+  await this.locators.signInButton.click();
+  await expect(this.locators.banner).toBeVisible();
+}
+
+// Expected
+async signIn() { await this.locators.signInButton.click(); }
+async assertSignedIn() { await expect(this.locators.banner).toBeVisible(); }
+```
+
+An assertion method holds no actions, and its name starts with `assert`. A method
+that acts and asserts hands every caller the check too, so a flow that only wants
+the action cannot opt out of it. The message names the `assert*` method to
+move the `expect` calls into and says to call that from the flow — an assertion
+nothing calls leaves the flow green while it checks nothing.
+
+The prefix has to be followed by a capital, so `assert` and `assertion` are both
+reported. A method whose name starts with `expect` gets the shorter message: it
+only asserts already, so its name should start with `assert` and the fix is the
+rename alone.
+
+Three shapes are left alone:
+
+- A `waitFor*` method. Its `await expect(locator).toBeVisible()` is the sync
+  point the caller awaits, not a check to move out.
+- An `expect` inside a loop. A cleanup method needs that settle wait every
+  iteration, or the next one acts on a stale row.
+- A field initializer, which has no actions to separate the assertion from.
+
+Applies to `.ts` files under `src/pages/`.
+
+Ships at `warn`.
+
 ### `no-inline-locator-in-page-object`
 
 A page object keeps its locators in a named getter, so a method body reads as
