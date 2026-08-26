@@ -120,6 +120,20 @@ ruleTester.run("assert-expect-pairing", assertExpectPairingRule.module, {
       ...pageObject(`async signIn() { logStep("signing in"); }`),
     },
     {
+      ...pageObject(`
+        async deleteAllProjects(prefix: string) {
+          const rows = this.dynamicLocators.matchingRows(prefix);
+          for (let attempt = 0; attempt < 10; attempt++) {
+            const countBeforeDelete = await rows.count();
+            if (countBeforeDelete === 0) break;
+            await rows.first().click();
+            await this.locators.confirmDeleteButton.click();
+            await expect(rows).toHaveCount(countBeforeDelete - 1);
+          }
+        }
+      `),
+    },
+    {
       ...pageObject(
         `async waitForContentVisible() { await expect(this.locators.content).toBeVisible(); }`,
       ),

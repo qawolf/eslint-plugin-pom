@@ -1,3 +1,5 @@
+import type { Rule } from "eslint";
+
 import { enclosingClassMember, isPageObjectFile } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
@@ -26,6 +28,8 @@ export const assertExpectPairingRule: PomLintRule = {
           if (node.callee.type !== "Identifier") return;
           if (node.callee.name !== "expect") return;
 
+          if (isInsideLoop(node)) return;
+
           const method = enclosingClassMember(node);
           if (!method || method.type !== "MethodDefinition") return;
           if (method.kind === "constructor") return;
@@ -53,10 +57,10 @@ export const assertExpectPairingRule: PomLintRule = {
     },
     meta: {
       messages: {
-        expectPrefixedName:
-          "`{{name}}` already only asserts, so rename it to `{{suggestion}}` rather than moving anything. Verification methods carry the `assert` prefix; a flow reading `expect` in the call misses that this line is the check.",
         expectOutsideAssert:
           "`{{name}}` does something to the page and also asserts. Leave the actions here and move this `expect` into a new `{{suggestion}}` method, then call `{{suggestion}}` from the flow. Flows are written Arrange / Act / Assert, so a flow that only wants the action currently gets the assertion too and cannot avoid it. Do call the new method somewhere -- if the assertion moves out and nothing calls it, the flow passes while checking nothing.",
+        expectPrefixedName:
+          "`{{name}}` already only asserts, so rename it to `{{suggestion}}` rather than moving anything. Verification methods carry the `assert` prefix; a flow reading `expect` in the call misses that this line is the check.",
       },
     },
   },
@@ -77,6 +81,38 @@ function isAssertName(name: string): boolean {
  */
 function isSyncPointName(name: string): boolean {
   return /^waitFor([A-Z]|$)/.test(name);
+}
+
+const loopTypes = new Set([
+  "DoWhileStatement",
+  "ForInStatement",
+  "ForOfStatement",
+  "ForStatement",
+  "WhileStatement",
+]);
+
+/**
+ * A cleanup method deletes every match in a bounded loop, and the convention
+ * requires `await expect(rows).toHaveCount(countBeforeDelete - 1)` each
+ * iteration: without it the next iteration can open a stale row. That settle
+ * wait is the loop's own sync point, and moving it to an `assert*` method would
+ * break the loop it paces.
+ */
+function isInsideLoop(node: Rule.Node): boolean {
+  let current: Rule.Node | null = node.parent;
+
+  while (current) {
+    if (loopTypes.has(current.type)) return true;
+    if (
+      current.type === "MethodDefinition" ||
+      current.type === "PropertyDefinition"
+    )
+      return false;
+
+    current = current.parent;
+  }
+
+  return false;
 }
 
 /** `expectHeadingVisible` is already an assertion method under older naming. */
