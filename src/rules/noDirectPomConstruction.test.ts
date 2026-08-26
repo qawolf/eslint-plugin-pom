@@ -35,7 +35,6 @@ ruleTester.run(
         errors: useCreate,
       },
       {
-        // Extra arguments do not change it.
         ...pageObject(
           `async goToDashboard() { return new DashboardPage(this.page, { retries: 2 }); }`,
         ),
@@ -54,7 +53,6 @@ ruleTester.run(
         errors: useCreate,
       },
       {
-        // Assigned rather than returned.
         ...pageObject(`
           async goToDashboard() {
             const dashboard = new DashboardPage(this.page);
@@ -68,7 +66,6 @@ ruleTester.run(
         errors: useCreate,
       },
       {
-        // Component sub-page-objects are constructed the same way.
         ...pageObject(
           `async openEditor() { return new AutomateEditorComponent(this.page); }`,
         ),
@@ -97,7 +94,6 @@ ruleTester.run(
         `),
       },
       {
-        // Self-construction with `this.page` is still self-construction.
         ...pageObject(`async clone() { return new SignInPage(this.page); }`),
       },
       {
@@ -113,7 +109,6 @@ ruleTester.run(
         ),
       },
       {
-        // No arguments at all.
         ...pageObject(`async fail() { throw new Error("nope"); }`),
       },
       {
@@ -121,7 +116,6 @@ ruleTester.run(
         ...pageObject(`async go() { return new DashboardPage(this.context); }`),
       },
       {
-        // Outside `src/pages/`.
         code: `class Flow { async go() { return new DashboardPage(this.page); } }`,
         filename: "src/flows/checkout.flow.ts",
       },
