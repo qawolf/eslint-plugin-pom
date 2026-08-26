@@ -131,6 +131,37 @@ Applies to `.ts` files under `src/pages/`.
 
 Ships at `warn`.
 
+### `no-wait-for-timeout-in-poms`
+
+Wait for the thing, not for a duration.
+
+```ts
+// Reported
+await this.page.waitForTimeout(2000);
+await this.page.waitForSelector("#ok");
+
+// Expected
+await this.locators.banner.waitFor();
+await this.page.waitForURL("**/home");
+await expect(this.locators.banner).toBeVisible();
+```
+
+The two fail differently, and the message says which: a fixed sleep passes on a
+fast machine and fails on a slow one, while `waitForSelector` returns before the
+element is stable _and_ takes a selector string, so it also routes around the
+`locators` getter.
+
+A `waitForTimeout` with a comment on the same line or the line above is left
+alone — that is the justification the code-review checklist asks for, and some
+waits genuinely have nothing observable to hang on. `waitForSelector` has no such
+exemption, since a comment does not make the selector string a locator.
+
+`waitForURL` and `waitForLoadState` are untouched; both wait on a real condition.
+
+Applies to `.ts` files under `src/pages/`.
+
+Ships at `warn`.
+
 ### `no-public-constructor`
 
 `BasePageObject` declares `protected constructor(page: Page)`. Redeclaring one
