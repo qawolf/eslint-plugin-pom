@@ -74,11 +74,7 @@ function isAssertName(name: string): boolean {
   return /^assert[A-Z]/.test(name);
 }
 
-/**
- * `waitFor*` names a sync point a caller awaits before its next action, and
- * `await expect(locator).toBeVisible()` is how the convention says to wait. So
- * the `expect` in one is the method doing its job, not an assertion to move out.
- */
+/** A `waitFor*` method's `expect` is the wait itself, not an assertion. */
 function isSyncPointName(name: string): boolean {
   return /^waitFor([A-Z]|$)/.test(name);
 }
@@ -92,11 +88,9 @@ const loopTypes = new Set([
 ]);
 
 /**
- * A cleanup method deletes every match in a bounded loop, and the convention
- * requires `await expect(rows).toHaveCount(countBeforeDelete - 1)` each
- * iteration: without it the next iteration can open a stale row. That settle
- * wait is the loop's own sync point, and moving it to an `assert*` method would
- * break the loop it paces.
+ * Stops at the enclosing member, so this is the `expect`'s own loop rather than
+ * one anywhere above it. An `expect` inside a loop is the per-iteration settle
+ * wait a cleanup method needs, not an assertion to move out.
  */
 function isInsideLoop(node: Rule.Node): boolean {
   let current: Rule.Node | null = node.parent;
