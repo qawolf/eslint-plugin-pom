@@ -64,6 +64,10 @@ ruleTester.run(
         errors: useCreate,
       },
       {
+        ...pageObject(`async openEdit() { return new EditModal(this.page); }`),
+        errors: useCreate,
+      },
+      {
         // Component sub-page-objects are constructed the same way.
         ...pageObject(
           `async openEditor() { return new AutomateEditorComponent(this.page); }`,
