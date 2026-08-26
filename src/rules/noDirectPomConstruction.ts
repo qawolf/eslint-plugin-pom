@@ -38,7 +38,7 @@ export const noDirectPomConstructionRule: PomLintRule = {
     meta: {
       messages: {
         useCreate:
-          '`new {{name}}(this.page)` builds another page object directly. Use `await this.create("{{name}}")`, which looks it up in the page registry -- that is how two page objects can use each other without importing each other as values, which would be a circular import. Two things to check when you swap it: this method has to be `async`, and `{{name}}` has to be listed in `src/lib/register-pages.ts` under exactly that name. If it is not, this compiles fine and then throws when the test runs.',
+          '`new {{name}}(...)` builds another page object directly. Ask the registry for it instead: `await this.create("{{name}}")`, with the name spelled exactly as the class is. The method has to be `async` to await it.',
       },
     },
   },
