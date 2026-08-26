@@ -73,7 +73,10 @@ export const typedCreateReturnRule: PomLintRule = {
   severity: "warn",
 };
 
-/** The page name in `return this.create("Name")`, if that is what this is. */
+/**
+ * The page name in `return this.create("Name")` or
+ * `return TargetPage.createFromPage(page)`, if that is what this is.
+ */
 function createdPageName(node: Rule.Node): string | undefined {
   if (node.type !== "ReturnStatement") return undefined;
   const returned = node.argument;
@@ -83,9 +86,15 @@ function createdPageName(node: Rule.Node): string | undefined {
     returned.type === "AwaitExpression" ? returned.argument : returned;
   if (call.type !== "CallExpression") return undefined;
   if (call.callee.type !== "MemberExpression") return undefined;
-  if (call.callee.object.type !== "ThisExpression") return undefined;
   if (call.callee.property.type !== "Identifier") return undefined;
-  if (call.callee.property.name !== "create") return undefined;
+
+  const { object, property } = call.callee;
+
+  if (property.name === "createFromPage")
+    return object.type === "Identifier" ? object.name : undefined;
+
+  if (property.name !== "create") return undefined;
+  if (object.type !== "ThisExpression") return undefined;
 
   const [first] = call.arguments;
   if (first?.type !== "Literal") return undefined;

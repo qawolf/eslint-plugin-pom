@@ -59,6 +59,18 @@ ruleTester.run("typed-create-return", typedCreateReturnRule.module, {
       errors: [{ messageId: "missingReturnType" }],
     },
     {
+      ...pageObject(`
+        async openPreview() {
+          const [popupPage] = await Promise.all([
+            this.page.waitForEvent("popup"),
+            this.locators.openInNewTab.click(),
+          ]);
+          return PreviewPage.createFromPage(popupPage);
+        }
+      `),
+      errors: [{ messageId: "missingReturnType" }],
+    },
+    {
       code: `class SignInPage extends BasePageObject {
         async goToDashboard() { return this.create("DashboardPage"); }
       }`,
@@ -70,6 +82,11 @@ ruleTester.run("typed-create-return", typedCreateReturnRule.module, {
     {
       ...pageObject(
         `async goToDashboard(): Promise<DashboardPage> { return this.create("DashboardPage"); }`,
+      ),
+    },
+    {
+      ...pageObject(
+        `async openPreview(): Promise<PreviewPage> { return PreviewPage.createFromPage(this.page); }`,
       ),
     },
     {
