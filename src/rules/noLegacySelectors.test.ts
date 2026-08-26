@@ -52,7 +52,6 @@ ruleTester.run("no-legacy-selectors", noLegacySelectorsRule.module, {
       errors: [{ messageId: "noChainCombinator" }],
     },
     {
-      // frameLocator takes the same strings.
       ...pageObject(`async go() { this.page.frameLocator("//iframe"); }`),
       errors: [{ messageId: "noXpath" }],
     },
@@ -64,7 +63,6 @@ ruleTester.run("no-legacy-selectors", noLegacySelectorsRule.module, {
       errors: [{ messageId: "noLegacyEngine" }],
     },
     {
-      // Leading whitespace does not hide it.
       ...pageObject(`async go() { this.page.locator("  //div"); }`),
       errors: [{ messageId: "noXpath" }],
     },
@@ -91,7 +89,6 @@ ruleTester.run("no-legacy-selectors", noLegacySelectorsRule.module, {
       ...pageObject(`async go() { this.page.locator("div:has-text('ok')"); }`),
     },
     {
-      // getBy* takes no selector string.
       ...pageObject(
         `async go() { this.page.getByText("text=not a selector"); }`,
       ),
@@ -109,17 +106,14 @@ ruleTester.run("no-legacy-selectors", noLegacySelectorsRule.module, {
       ...pageObject("async go(sel: string) { this.page.locator(`${sel}`); }"),
     },
     {
-      // Chained calls are the recommended form.
       ...pageObject(
         `async go() { this.page.locator("form").locator("button"); }`,
       ),
     },
     {
-      // No argument at all.
       ...pageObject(`async go() { this.page.locator(); }`),
     },
     {
-      // Outside `src/pages/`.
       code: `class Flow { async go() { this.page.locator("//div"); } }`,
       filename: "src/flows/checkout.flow.ts",
     },
