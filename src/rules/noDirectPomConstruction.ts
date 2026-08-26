@@ -1,7 +1,6 @@
 import type { Rule } from "eslint";
-import type { Expression, SpreadElement } from "estree";
 
-import { isPageObjectFile } from "../pageObject/index.js";
+import { isPageObjectFile, isThisPageExpression } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
 /**
@@ -25,7 +24,7 @@ export const noDirectPomConstructionRule: PomLintRule = {
       return {
         NewExpression(node) {
           if (node.callee.type !== "Identifier") return;
-          if (!node.arguments.some(isThisPage)) return;
+          if (!node.arguments.some(isThisPageExpression)) return;
 
           const { name } = node.callee;
           if (!isPageObjectName(name)) return;
@@ -56,16 +55,6 @@ export const noDirectPomConstructionRule: PomLintRule = {
  */
 function isPageObjectName(name: string): boolean {
   return name.endsWith("Page") || name.endsWith("Component");
-}
-
-function isThisPage(argument: Expression | SpreadElement): boolean {
-  if (argument.type !== "MemberExpression") return false;
-
-  return (
-    argument.object.type === "ThisExpression" &&
-    argument.property.type === "Identifier" &&
-    argument.property.name === "page"
-  );
 }
 
 function enclosingClassName(node: Rule.Node): string | undefined {

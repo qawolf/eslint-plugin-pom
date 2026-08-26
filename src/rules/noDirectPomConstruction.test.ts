@@ -42,6 +42,18 @@ ruleTester.run(
         errors: useCreate,
       },
       {
+        ...pageObject(
+          `async goToDashboard() { return new DashboardPage(this.page!); }`,
+        ),
+        errors: useCreate,
+      },
+      {
+        ...pageObject(
+          `async goToDashboard() { return new DashboardPage(this.page as Page); }`,
+        ),
+        errors: useCreate,
+      },
+      {
         // Assigned rather than returned.
         ...pageObject(`
           async goToDashboard() {
