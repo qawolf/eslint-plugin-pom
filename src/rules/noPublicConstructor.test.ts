@@ -30,6 +30,12 @@ ruleTester.run("no-public-constructor", noPublicConstructorRule.module, {
       errors: publicConstructor,
     },
     {
+      // A page object extending another page object is still a page object.
+      code: `class AdminLoginPage extends LoginPage { constructor(page: Page) { super(page); } }`,
+      errors: publicConstructor,
+      filename: pagePath,
+    },
+    {
       // Saying `public` outright is the same widening.
       ...pageObject(`public constructor(page: Page) { super(page); }`),
       errors: publicConstructor,
@@ -67,6 +73,11 @@ ruleTester.run("no-public-constructor", noPublicConstructorRule.module, {
     {
       // A method named constructor-ish is not a constructor.
       ...pageObject(`async construct(page: Page) { return page; }`),
+    },
+    {
+      // A helper sharing the directory is not a page object.
+      code: `class TestDataFactory { constructor(seed: number) { this.seed = seed; } }`,
+      filename: pagePath,
     },
     {
       // Outside `src/pages/`.

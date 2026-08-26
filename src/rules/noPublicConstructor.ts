@@ -1,4 +1,8 @@
-import { isPageObjectFile } from "../pageObject/index.js";
+import {
+  enclosingClass,
+  isPageObjectClass,
+  isPageObjectFile,
+} from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
 /**
@@ -21,6 +25,7 @@ export const noPublicConstructorRule: PomLintRule = {
       return {
         MethodDefinition(node) {
           if (node.kind !== "constructor") return;
+          if (!isPageObjectClass(enclosingClass(node))) return;
           // Omitted means public, and `public` says so outright.
           if (
             "accessibility" in node &&

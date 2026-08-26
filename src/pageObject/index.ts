@@ -45,6 +45,56 @@ export function enclosingClassMember(node: Rule.Node): Rule.Node | undefined {
   return member;
 }
 
+const pageObjectBases = new Set([
+  "BasePageObject",
+  "EntryPointPageObject",
+  "SubPageObject",
+]);
+
+const pageObjectSuffixes = ["Component", "Modal", "Page"];
+
+/** Page objects are named for what they are: a `Page`, `Component` or `Modal`. */
+export function isPageObjectName(name: string): boolean {
+  return pageObjectSuffixes.some((suffix) => name.endsWith(suffix));
+}
+
+/**
+ * A class extending a page-object base, or named like one -- which covers a page
+ * object extending another page object, where no base class is named. Keeps a
+ * helper class that happens to sit under `src/pages/` out of scope.
+ */
+export function isPageObjectClass(node: Rule.Node | undefined): boolean {
+  if (!node) return false;
+  if (node.type !== "ClassDeclaration" && node.type !== "ClassExpression")
+    return false;
+
+  if (node.id && isPageObjectName(node.id.name)) return true;
+
+  const { superClass } = node;
+  if (superClass?.type !== "Identifier") return false;
+
+  return (
+    pageObjectBases.has(superClass.name) || isPageObjectName(superClass.name)
+  );
+}
+
+/** The class this node sits in, innermost first. */
+export function enclosingClass(node: Rule.Node): Rule.Node | undefined {
+  let current: Rule.Node | null = node.parent;
+
+  while (current) {
+    if (
+      current.type === "ClassDeclaration" ||
+      current.type === "ClassExpression"
+    )
+      return current;
+
+    current = current.parent;
+  }
+
+  return undefined;
+}
+
 /** `selectors` and `dynamicSelectors` are the mobile spellings. */
 const locatorHolderNames = new Set([
   "dynamicLocators",
