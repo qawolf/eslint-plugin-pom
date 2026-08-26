@@ -72,6 +72,37 @@ Applies to `.ts` files under `src/pages/`.
 
 Ships at `warn`.
 
+### `no-direct-pom-construction`
+
+Sibling page objects come from the registry, not from `new`.
+
+```ts
+// Reported
+async goToDashboard() { return new DashboardPage(this.page); }
+
+// Expected
+async goToDashboard(): Promise<DashboardPage> {
+  return this.create("DashboardPage");
+}
+```
+
+`this.create` looks the class up in the page registry, which is how two page
+objects can use each other without importing each other as values — a circular
+import. The name is a string for the same reason, so it has to match the class
+exactly, and `create` is async.
+
+Reported when the constructed name ends in `Page`, `Component` or `Modal` and
+`this.page` is among the arguments, including through a `!` or an `as`. Anything
+else handed the page — `new NetworkMonitor(this.page)` — is left alone, since the
+registry does not hold it and there is no `create` call to point it at.
+
+A class constructing itself is fine: a page object's own `static create` factory
+is exactly where `new ThisPage(page)` belongs.
+
+Applies to `.ts` files under `src/pages/`.
+
+Ships at `warn`.
+
 ### `no-inline-locator-in-page-object`
 
 A page object keeps its locators in a named getter, so a method body reads as
