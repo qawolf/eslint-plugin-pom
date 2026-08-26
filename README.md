@@ -103,6 +103,34 @@ Applies to `.ts` files under `src/pages/`.
 
 Ships at `warn`.
 
+### `no-public-constructor`
+
+`BasePageObject` declares `protected constructor(page: Page)`. Redeclaring one
+without saying `protected` widens it to public.
+
+```ts
+// Reported
+constructor(page: Page) { super(page); }
+public constructor(page: Page) { super(page); }
+
+// Expected — delete it, or keep the base's visibility
+protected constructor(page: Page) { super(page); }
+```
+
+A public constructor lets any code call `new SignInPage(page)` and skip the
+registry, which is what `no-direct-pom-construction` exists to protect. A
+constructor whose body only calls `super(page)` can go entirely — it is
+inherited.
+
+Only classes that are page objects are reported: one extending
+`BasePageObject`, `EntryPointPageObject` or `SubPageObject`, or named like a page
+object (`…Page`, `…Component`, `…Modal`) since a page object may extend another
+page object. A helper class that happens to sit under `src/pages/` is left alone.
+
+Applies to `.ts` files under `src/pages/`.
+
+Ships at `warn`.
+
 ### `no-inline-locator-in-page-object`
 
 A page object keeps its locators in a named getter, so a method body reads as
