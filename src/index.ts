@@ -3,6 +3,7 @@ import { entryPointFactoryRule } from "./rules/entryPointFactory.js";
 import { noDirectPomConstructionRule } from "./rules/noDirectPomConstruction.js";
 import { noInlineLocatorInPageObjectRule } from "./rules/noInlineLocatorInPageObject.js";
 import { noWaitForTimeoutInPomsRule } from "./rules/noWaitForTimeoutInPoms.js";
+import { noLegacySelectorsRule } from "./rules/noLegacySelectors.js";
 import { noPublicConstructorRule } from "./rules/noPublicConstructor.js";
 import { selectorGetterShapeRule } from "./rules/selectorGetterShape.js";
 import { typedCreateReturnRule } from "./rules/typedCreateReturn.js";
@@ -21,6 +22,7 @@ const allRules: PomLintRule[] = [
   entryPointFactoryRule,
   noDirectPomConstructionRule,
   noInlineLocatorInPageObjectRule,
+  noLegacySelectorsRule,
   noPublicConstructorRule,
   noWaitForTimeoutInPomsRule,
   selectorGetterShapeRule,
