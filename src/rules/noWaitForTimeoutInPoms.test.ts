@@ -29,6 +29,16 @@ ruleTester.run(
   {
     invalid: [
       {
+        // A justification excuses a fixed sleep, not a selector string.
+        ...pageObject(`
+          async settle() {
+            // The banner is slow on staging.
+            await this.page.waitForSelector("#ok");
+          }
+        `),
+        errors: bannedWait,
+      },
+      {
         ...pageObject(
           `async settle() { await this.page.waitForTimeout(2000); }`,
         ),
@@ -65,6 +75,19 @@ ruleTester.run(
       },
     ],
     valid: [
+      {
+        ...pageObject(`
+          async exportReport() {
+            // The export runs on a queue the page does not reflect.
+            await this.page.waitForTimeout(2000);
+          }
+        `),
+      },
+      {
+        ...pageObject(
+          `async exportReport() { await this.page.waitForTimeout(2000); /* waiting on the third-party widget */ }`,
+        ),
+      },
       {
         ...pageObject(
           `async settle() { await this.locators.banner.waitFor(); }`,

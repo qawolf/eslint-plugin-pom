@@ -1,3 +1,5 @@
+import type { Rule } from "eslint";
+
 import { isPageObjectFile } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
@@ -36,6 +38,8 @@ export const noWaitForTimeoutInPomsRule: PomLintRule = {
           const method = node.callee.property.name;
           const reason = bannedWaits.get(method);
           if (!reason) return;
+          if (method === "waitForTimeout" && hasJustification(context, node))
+            return;
 
           context.report({
             data: { method, reason },
@@ -57,3 +61,17 @@ export const noWaitForTimeoutInPomsRule: PomLintRule = {
 
   severity: "warn",
 };
+
+/**
+ * A fixed sleep is allowed when the author says what it is waiting on, and the
+ * review checklist takes that on the same line or the line above.
+ */
+function hasJustification(context: Rule.RuleContext, node: Rule.Node): boolean {
+  const callLine = node.loc?.start.line;
+  if (callLine === undefined) return false;
+
+  return context.sourceCode.getAllComments().some((comment) => {
+    const commentLine = comment.loc?.end.line;
+    return commentLine === callLine || commentLine === callLine - 1;
+  });
+}
