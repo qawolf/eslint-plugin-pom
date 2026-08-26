@@ -49,24 +49,23 @@ async signIn() { await this.locators.signInButton.click(); }
 async assertSignedIn() { await expect(this.locators.banner).toBeVisible(); }
 ```
 
-Flows are written Arrange / Act / Assert, so a flow that only wants the action
-gets the assertion too and cannot avoid it. The message names the method to move
-the assertion to, and says to call it from the flow — an assertion nothing calls
-leaves the flow passing while it checks nothing.
+Flows are written Arrange / Act / Assert. A method that both acts and asserts
+hands every caller the check too, so a flow that only wants the action cannot
+opt out of it. The message names the `assert*` method to move the `expect` into,
+and says to call it from the flow — an assertion nothing calls leaves the flow
+green while it checks nothing.
 
-`assert` and `assertion` are both reported: the prefix has to be followed by a
-capital, or it is a different word.
+The prefix has to be followed by a capital, so `assert` and `assertion` are both
+reported. An `expect*` name is reported differently: that method already only
+asserts, so the fix is to rename it `assert*` rather than split it.
 
 Three shapes are left alone:
 
-- A `waitFor*` method, where `await expect(locator).toBeVisible()` is the sync
-  point the caller is waiting on rather than an assertion to move out.
-- An `expect` inside a loop, which is the per-iteration settle wait a cleanup
-  method needs to keep from acting on a stale row.
+- A `waitFor*` method. Its `await expect(locator).toBeVisible()` is the sync
+  point the caller awaits, not a check to move out.
+- An `expect` inside a loop. A cleanup method needs that settle wait every
+  iteration, or the next one acts on a stale row.
 - A field initializer, which has no actions to separate the assertion from.
-
-An `expect*`-named method gets a different message: it already only asserts, so
-the fix is to rename it `assert*`, not to split it.
 
 Applies to `.ts` files under `src/pages/`.
 
