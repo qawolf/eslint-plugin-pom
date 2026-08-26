@@ -42,6 +42,11 @@ ruleTester.run("assert-expect-pairing", assertExpectPairingRule.module, {
       errors: expectOutsideAssert,
     },
     {
+      // `waitForever` only starts with the prefix; the exemption needs the word.
+      ...pageObject(`async waitForever() { expect(1).toBe(1); }`),
+      errors: expectOutsideAssert,
+    },
+    {
       // Nested in a callback, still inside the action method.
       ...pageObject(`
         async clickAll(names: string[]) {
@@ -101,6 +106,16 @@ ruleTester.run("assert-expect-pairing", assertExpectPairingRule.module, {
     {
       // A plain call that is not `expect` is just an action.
       ...pageObject(`async signIn() { logStep("signing in"); }`),
+    },
+    {
+      ...pageObject(
+        `async waitForContentVisible() { await expect(this.locators.content).toBeVisible(); }`,
+      ),
+    },
+    {
+      ...pageObject(
+        `async waitFor() { await expect(this.locators.row).toHaveCount(1); }`,
+      ),
     },
     {
       // A field, not a method, so there is no action to separate the assert from.

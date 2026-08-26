@@ -32,7 +32,7 @@ export const assertExpectPairingRule: PomLintRule = {
           if (method.key.type !== "Identifier") return;
 
           const name = method.key.name;
-          if (isAssertName(name)) return;
+          if (isAssertName(name) || isSyncPointName(name)) return;
 
           context.report({
             data: { name, suggestion: assertName(name) },
@@ -57,6 +57,15 @@ export const assertExpectPairingRule: PomLintRule = {
 
 function isAssertName(name: string): boolean {
   return /^assert[A-Z]/.test(name);
+}
+
+/**
+ * `waitFor*` names a sync point a caller awaits before its next action, and
+ * `await expect(locator).toBeVisible()` is how the convention says to wait. So
+ * the `expect` in one is the method doing its job, not an assertion to move out.
+ */
+function isSyncPointName(name: string): boolean {
+  return /^waitFor([A-Z]|$)/.test(name);
 }
 
 function assertName(name: string): string {
