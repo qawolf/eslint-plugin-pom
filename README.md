@@ -51,7 +51,7 @@ async assertSignedIn() { await expect(this.locators.banner).toBeVisible(); }
 
 Flows are written Arrange / Act / Assert, so a flow that only wants the action
 gets the assertion too and cannot avoid it. The message names the method to move
-it to, and says to call that method from somewhere — an assertion nothing calls
+the assertion to, and says to call it from the flow — an assertion nothing calls
 leaves the flow passing while it checks nothing.
 
 `assert` and `assertion` are both reported: the prefix has to be followed by a

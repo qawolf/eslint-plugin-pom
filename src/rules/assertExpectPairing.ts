@@ -58,9 +58,9 @@ export const assertExpectPairingRule: PomLintRule = {
     meta: {
       messages: {
         expectOutsideAssert:
-          "`{{name}}` does something to the page and also asserts. Leave the actions here and move this `expect` into a new `{{suggestion}}` method, then call `{{suggestion}}` from the flow. Flows are written Arrange / Act / Assert, so a flow that only wants the action currently gets the assertion too and cannot avoid it. Do call the new method somewhere -- if the assertion moves out and nothing calls it, the flow passes while checking nothing.",
+          "`{{name}}` acts and asserts. Move this `expect` into a new `{{suggestion}}` method and call that from the flow, so a flow that only wants the action can leave the check out.",
         expectPrefixedName:
-          "`{{name}}` already only asserts, so rename it to `{{suggestion}}` rather than moving anything. Verification methods carry the `assert` prefix; a flow reading `expect` in the call misses that this line is the check.",
+          "`{{name}}` only asserts, so its name has to start with `assert`: rename it to `{{suggestion}}`. Nothing here needs moving.",
       },
     },
   },
