@@ -36,12 +36,10 @@ ruleTester.run("no-public-constructor", noPublicConstructorRule.module, {
       filename: pagePath,
     },
     {
-      // Saying `public` outright is the same widening.
       ...pageObject(`public constructor(page: Page) { super(page); }`),
       errors: publicConstructor,
     },
     {
-      // A body doing more than `super()` is still public.
       ...pageObject(`
         constructor(page: Page) {
           super(page);
@@ -60,18 +58,15 @@ ruleTester.run("no-public-constructor", noPublicConstructorRule.module, {
   ],
   valid: [
     {
-      // No constructor at all, which is the usual shape.
       ...pageObject(`async signIn() { await this.locators.button.click(); }`),
     },
     {
-      // Matches the base class's visibility.
       ...pageObject(`protected constructor(page: Page) { super(page); }`),
     },
     {
       ...pageObject(`private constructor(page: Page) { super(page); }`),
     },
     {
-      // A method named constructor-ish is not a constructor.
       ...pageObject(`async construct(page: Page) { return page; }`),
     },
     {
@@ -80,7 +75,6 @@ ruleTester.run("no-public-constructor", noPublicConstructorRule.module, {
       filename: pagePath,
     },
     {
-      // Outside `src/pages/`.
       code: `class Helper { constructor(page: Page) { this.page = page; } }`,
       filename: "src/flows/checkout.flow.ts",
     },
