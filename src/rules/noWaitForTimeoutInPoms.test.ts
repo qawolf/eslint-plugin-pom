@@ -51,7 +51,6 @@ ruleTester.run(
         errors: bannedWait,
       },
       {
-        // Off a locator rather than the page.
         ...pageObject(
           `async settle() { await this.locators.row.waitForTimeout(50); }`,
         ),
@@ -104,15 +103,12 @@ ruleTester.run(
         ),
       },
       {
-        // A reference, not a call.
         ...pageObject(`async wire() { return this.page.waitForTimeout; }`),
       },
       {
-        // A plain call has no member to inspect.
         ...pageObject(`async settle() { logStep("settling"); }`),
       },
       {
-        // Outside `src/pages/`.
         code: `class Flow { async go() { await this.page.waitForTimeout(1); } }`,
         filename: "src/flows/checkout.flow.ts",
       },
