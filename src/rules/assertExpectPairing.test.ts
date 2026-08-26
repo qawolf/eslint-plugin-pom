@@ -103,6 +103,10 @@ ruleTester.run("assert-expect-pairing", assertExpectPairingRule.module, {
       ...pageObject(`async signIn() { logStep("signing in"); }`),
     },
     {
+      // A field, not a method, so there is no action to separate the assert from.
+      ...pageObject(`readonly ready = expect(1).toBe(1);`),
+    },
+    {
       // Outside a method, so there is no action method being mixed.
       code: `export function check() { expect(1).toBe(1); }`,
       filename: pagePath,

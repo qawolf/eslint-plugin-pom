@@ -1,4 +1,4 @@
-import { enclosingMethod, isPageObjectFile } from "../pageObject/index.js";
+import { enclosingClassMember, isPageObjectFile } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
 /**
@@ -26,7 +26,7 @@ export const assertExpectPairingRule: PomLintRule = {
           if (node.callee.type !== "Identifier") return;
           if (node.callee.name !== "expect") return;
 
-          const method = enclosingMethod(node);
+          const method = enclosingClassMember(node);
           if (!method || method.type !== "MethodDefinition") return;
           if (method.kind === "constructor") return;
           if (method.key.type !== "Identifier") return;

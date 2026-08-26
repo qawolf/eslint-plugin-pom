@@ -45,18 +45,6 @@ export function enclosingClassMember(node: Rule.Node): Rule.Node | undefined {
   return member;
 }
 
-/** The method enclosing this node, ignoring any nested class in between. */
-export function enclosingMethod(node: Rule.Node): Rule.Node | undefined {
-  let current: Rule.Node | null = node.parent;
-
-  while (current) {
-    if (current.type === "MethodDefinition") return current;
-    current = current.parent;
-  }
-
-  return undefined;
-}
-
 /** `selectors` and `dynamicSelectors` are the mobile spellings. */
 const locatorHolderNames = new Set([
   "dynamicLocators",
