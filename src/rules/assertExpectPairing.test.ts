@@ -59,7 +59,6 @@ ruleTester.run("assert-expect-pairing", assertExpectPairingRule.module, {
       errors: expectOutsideAssert,
     },
     {
-      // Nested in a callback, still inside the action method.
       ...pageObject(`
         async clickAll(names: string[]) {
           names.forEach((name) => {
@@ -70,7 +69,6 @@ ruleTester.run("assert-expect-pairing", assertExpectPairingRule.module, {
       errors: expectOutsideAssert,
     },
     {
-      // A getter is a method too.
       ...pageObject(`get ready() { expect(1).toBe(1); return true; }`),
       errors: expectOutsideAssert,
     },
@@ -106,17 +104,14 @@ ruleTester.run("assert-expect-pairing", assertExpectPairingRule.module, {
       ),
     },
     {
-      // No expect at all.
       ...pageObject(
         `async signIn() { await this.locators.signInButton.click(); }`,
       ),
     },
     {
-      // A different function named expect on an object is not the matcher.
       ...pageObject(`async signIn() { await this.helper.expect(1); }`),
     },
     {
-      // A plain call that is not `expect` is just an action.
       ...pageObject(`async signIn() { logStep("signing in"); }`),
     },
     {
@@ -148,7 +143,6 @@ ruleTester.run("assert-expect-pairing", assertExpectPairingRule.module, {
       ...pageObject(`readonly ready = expect(1).toBe(1);`),
     },
     {
-      // Outside a method, so there is no action method being mixed.
       code: `export function check() { expect(1).toBe(1); }`,
       filename: pagePath,
     },
