@@ -49,15 +49,16 @@ async signIn() { await this.locators.signInButton.click(); }
 async assertSignedIn() { await expect(this.locators.banner).toBeVisible(); }
 ```
 
-Flows are written Arrange / Act / Assert. A method that both acts and asserts
-hands every caller the check too, so a flow that only wants the action cannot
-opt out of it. The message names the `assert*` method to move the `expect` into,
-and says to call it from the flow — an assertion nothing calls leaves the flow
-green while it checks nothing.
+An assertion method holds no actions, and its name starts with `assert`. A method
+that acts and asserts hands every caller the check too, so a flow that only wants
+the action cannot opt out of it. The message names the `assert*` method to
+move the `expect` calls into and says to call that from the flow — an assertion
+nothing calls leaves the flow green while it checks nothing.
 
 The prefix has to be followed by a capital, so `assert` and `assertion` are both
-reported. An `expect*` name is reported differently: that method already only
-asserts, so the fix is to rename it `assert*` rather than split it.
+reported. A method whose name starts with `expect` gets the shorter message: it
+only asserts already, so its name should start with `assert` and the fix is the
+rename alone.
 
 Three shapes are left alone:
 
