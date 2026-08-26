@@ -71,6 +71,12 @@ ruleTester.run("typed-create-return", typedCreateReturnRule.module, {
       errors: [{ messageId: "missingReturnType" }],
     },
     {
+      ...pageObject(
+        `wrap(popupPage: Page): any { return PreviewPage.createFromPage(popupPage); }`,
+      ),
+      errors: [{ messageId: "uselessReturnType" }],
+    },
+    {
       code: `class SignInPage extends BasePageObject {
         async goToDashboard() { return this.create("DashboardPage"); }
       }`,
@@ -87,6 +93,12 @@ ruleTester.run("typed-create-return", typedCreateReturnRule.module, {
     {
       ...pageObject(
         `async openPreview(): Promise<PreviewPage> { return PreviewPage.createFromPage(this.page); }`,
+      ),
+    },
+    {
+      // A synchronous method returns the class itself, not a promise of it.
+      ...pageObject(
+        `wrap(popupPage: Page): PreviewPage { return PreviewPage.createFromPage(popupPage); }`,
       ),
     },
     {

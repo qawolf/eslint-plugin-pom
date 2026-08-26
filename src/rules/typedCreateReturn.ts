@@ -39,10 +39,11 @@ export const typedCreateReturnRule: PomLintRule = {
           if (!method || method.type !== "MethodDefinition") return;
           if (method.key.type !== "Identifier") return;
 
+          const suggestion = isAsyncMethod(method) ? `Promise<${page}>` : page;
           const annotation = returnTypeText(context, method);
           if (annotation === undefined) {
             context.report({
-              data: { method: method.key.name, page },
+              data: { method: method.key.name, page, suggestion },
               messageId: "missingReturnType",
               node,
             });
@@ -51,7 +52,12 @@ export const typedCreateReturnRule: PomLintRule = {
 
           if (untypedReturns.has(annotation))
             context.report({
-              data: { current: annotation, method: method.key.name, page },
+              data: {
+                current: annotation,
+                method: method.key.name,
+                page,
+                suggestion,
+              },
               messageId: "uselessReturnType",
               node,
             });
@@ -61,9 +67,9 @@ export const typedCreateReturnRule: PomLintRule = {
     meta: {
       messages: {
         missingReturnType:
-          "`{{method}}` hands back a `{{page}}` without saying so. Add `: Promise<{{page}}>` to it, and `import type` the class if this file does not already -- type-only, because two page objects importing each other as values is a circular import. Until it is annotated the caller only knows it got a `BasePageObject`, so every method on `{{page}}` looks like it does not exist and the next line will not compile.",
+          "`{{method}}` hands back a `{{page}}`, so give it the return type `: {{suggestion}}`. Without it the caller gets whatever the call infers -- `BasePageObject` or `any` -- and `{{page}}`'s own methods are either missing or unchecked.",
         uselessReturnType:
-          "`{{method}}` hands back a `{{page}}` but is annotated `{{current}}`, so the caller still cannot see any of `{{page}}`'s methods. Change the annotation to `: Promise<{{page}}>`.",
+          "`{{method}}` hands back a `{{page}}` but its return type says `{{current}}`, which tells the caller nothing about it. Change the return type to `: {{suggestion}}`.",
       },
     },
   },
@@ -99,6 +105,10 @@ function createdPageName(node: Rule.Node): string | undefined {
   const [first] = call.arguments;
   if (first?.type !== "Literal") return undefined;
   return typeof first.value === "string" ? first.value : undefined;
+}
+
+function isAsyncMethod(method: Rule.Node): boolean {
+  return method.type === "MethodDefinition" && method.value.async === true;
 }
 
 /** Undefined when the method has no annotation at all. */
