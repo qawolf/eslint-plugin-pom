@@ -43,7 +43,7 @@ export const entryPointFactoryRule: PomLintRule = {
     meta: {
       messages: {
         missingCreate:
-          "`{{name}}` extends `EntryPointPageObject` but has no `static create()`. A flow reaches this page by calling `{{name}}.create()`, and that factory is what launches the browser and installs the page hooks before handing the instance back -- without it there is no supported way to get one, since the constructor is protected. Add a `static async create(...)` that launches and returns an instance; copy the shape from another entry point under `src/pages/`.",
+          "`{{name}}` extends `EntryPointPageObject` but has no `static create()`, so a flow has no way to open this page -- the constructor is protected, and `create` is what launches the browser and installs the page hooks. Add `static async create(options?: { instantiatedPage?: Page; url?: string })`, copying the shape from another entry point under `src/pages/`.",
       },
     },
   },
