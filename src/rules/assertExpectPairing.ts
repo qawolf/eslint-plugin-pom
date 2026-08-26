@@ -34,6 +34,15 @@ export const assertExpectPairingRule: PomLintRule = {
           const name = method.key.name;
           if (isAssertName(name) || isSyncPointName(name)) return;
 
+          if (isExpectName(name)) {
+            context.report({
+              data: { name, suggestion: renamedFromExpect(name) },
+              messageId: "expectPrefixedName",
+              node,
+            });
+            return;
+          }
+
           context.report({
             data: { name, suggestion: assertName(name) },
             messageId: "expectOutsideAssert",
@@ -44,6 +53,8 @@ export const assertExpectPairingRule: PomLintRule = {
     },
     meta: {
       messages: {
+        expectPrefixedName:
+          "`{{name}}` already only asserts, so rename it to `{{suggestion}}` rather than moving anything. Verification methods carry the `assert` prefix; a flow reading `expect` in the call misses that this line is the check.",
         expectOutsideAssert:
           "`{{name}}` does something to the page and also asserts. Leave the actions here and move this `expect` into a new `{{suggestion}}` method, then call `{{suggestion}}` from the flow. Flows are written Arrange / Act / Assert, so a flow that only wants the action currently gets the assertion too and cannot avoid it. Do call the new method somewhere -- if the assertion moves out and nothing calls it, the flow passes while checking nothing.",
       },
@@ -66,6 +77,15 @@ function isAssertName(name: string): boolean {
  */
 function isSyncPointName(name: string): boolean {
   return /^waitFor([A-Z]|$)/.test(name);
+}
+
+/** `expectHeadingVisible` is already an assertion method under older naming. */
+function isExpectName(name: string): boolean {
+  return /^expect[A-Z]/.test(name);
+}
+
+function renamedFromExpect(name: string): string {
+  return `assert${name.slice("expect".length)}()`;
 }
 
 function assertName(name: string): string {

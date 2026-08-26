@@ -22,6 +22,7 @@ function pageObject(body: string) {
 }
 
 const expectOutsideAssert = [{ messageId: "expectOutsideAssert" }];
+const expectPrefixedName = [{ messageId: "expectPrefixedName" }];
 
 ruleTester.run("assert-expect-pairing", assertExpectPairingRule.module, {
   invalid: [
@@ -39,6 +40,17 @@ ruleTester.run("assert-expect-pairing", assertExpectPairingRule.module, {
     {
       // Lowercase after the prefix is a different word, not an assert method.
       ...pageObject(`async assertion() { expect(1).toBe(1); }`),
+      errors: expectOutsideAssert,
+    },
+    {
+      ...pageObject(
+        `async expectHeadingVisible() { await expect(this.locators.heading).toBeVisible(); }`,
+      ),
+      errors: expectPrefixedName,
+    },
+    {
+      // `expected` is a different word, so this is an action method mixing in an assert.
+      ...pageObject(`async expected() { expect(1).toBe(1); }`),
       errors: expectOutsideAssert,
     },
     {
