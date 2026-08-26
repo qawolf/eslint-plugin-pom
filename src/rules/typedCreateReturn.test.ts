@@ -48,7 +48,6 @@ ruleTester.run("typed-create-return", typedCreateReturnRule.module, {
       errors: [{ messageId: "uselessReturnType" }],
     },
     {
-      // Awaited, then returned.
       ...pageObject(
         `async goToDashboard() { return await this.create("DashboardPage"); }`,
       ),
@@ -108,7 +107,6 @@ ruleTester.run("typed-create-return", typedCreateReturnRule.module, {
       ),
     },
     {
-      // Not `this.create`.
       ...pageObject(`async build() { return this.factory.create("Thing"); }`),
     },
     {
@@ -120,15 +118,12 @@ ruleTester.run("typed-create-return", typedCreateReturnRule.module, {
       ...pageObject(`async go(name: string) { return this.create(name); }`),
     },
     {
-      // Not a create call at all.
       ...pageObject(`async count(): Promise<number> { return 1; }`),
     },
     {
-      // A bare return has no argument.
       ...pageObject(`async go(): Promise<void> { return; }`),
     },
     {
-      // Outside `src/pages/`.
       code: `class Flow { async go() { return this.create("DashboardPage"); } }`,
       filename: "src/flows/checkout.flow.ts",
     },
