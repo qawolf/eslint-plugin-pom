@@ -92,7 +92,6 @@ ruleTester.run("web-first-assertions", webFirstAssertionsRule.module, {
       `),
     },
     {
-      // Not awaited, so nothing was read.
       ...pageObject(`
         async assertCount(rows: number) {
           expect(rows).toBe(3);
@@ -100,7 +99,6 @@ ruleTester.run("web-first-assertions", webFirstAssertionsRule.module, {
       `),
     },
     {
-      // A read outside expect is fine -- the value is being used, not asserted.
       ...pageObject(`
         async readBanner(): Promise<string> {
           return (await this.locators.banner.innerText()) ?? "";
