@@ -1,6 +1,92 @@
 import type { Rule } from "eslint";
+import type {
+  ClassDeclaration,
+  ClassExpression,
+  MethodDefinition,
+  PropertyDefinition,
+} from "estree";
 
 const pagesDirectoryPrefix = "src/pages/";
+
+export type ClassNode = ClassDeclaration | ClassExpression;
+
+export type ClassMember = MethodDefinition | PropertyDefinition;
+
+/**
+ * `accessibility`, `declare` and `readonly` come from the TypeScript parser;
+ * estree does not model them.
+ */
+export type TsClassMember = ClassMember & {
+  accessibility?: "private" | "protected" | "public";
+  declare?: boolean;
+  readonly?: boolean;
+};
+
+/** `abstract` likewise. */
+export type TsClass = ClassNode & { abstract?: boolean };
+
+/**
+ * The other way to recognise a page object: by its superclass rather than its
+ * path. Path scoping (`isPageObjectFile`) is the tighter fit for a directory
+ * reserved for page objects; the superclass is what a rule uses when it must
+ * work on a file anywhere in the workspace, and it is what the flow-side
+ * rules pair with. Blind spot: a page object extending *another* page object
+ * names no base class here, and following that chain would need type
+ * information.
+ */
+export const pageObjectBaseClasses = new Set([
+  "BasePageObject",
+  "EntryPointPageObject",
+  "SubPageObject",
+]);
+
+export function isPageObjectClass(node: ClassNode): boolean {
+  const { superClass } = node;
+  return (
+    superClass?.type === "Identifier" &&
+    pageObjectBaseClasses.has(superClass.name)
+  );
+}
+
+/**
+ * The nearest enclosing class, when it is a page object by superclass. A
+ * class nested inside a page-object method is judged on its own superclass,
+ * not the outer one.
+ */
+export function enclosingPageObject(node: Rule.Node): ClassNode | undefined {
+  let current: Rule.Node | null = node.parent;
+
+  while (current) {
+    if (current.type === "ClassBody") {
+      const declaration = current.parent;
+      const isClass =
+        declaration.type === "ClassDeclaration" ||
+        declaration.type === "ClassExpression";
+
+      return isClass && isPageObjectClass(declaration)
+        ? declaration
+        : undefined;
+    }
+
+    current = current.parent;
+  }
+
+  return undefined;
+}
+
+/**
+ * The static name of a member key: `locators` or `"locators"`. A computed or
+ * private key has no name here.
+ */
+export function memberName(member: ClassMember): string | undefined {
+  if (member.computed) return undefined;
+
+  const { key } = member;
+  if (key.type === "Identifier") return key.name;
+  if (key.type === "Literal" && typeof key.value === "string") return key.value;
+
+  return undefined;
+}
 
 /**
  * No host passes the workspace path verbatim: the editor lints
@@ -46,7 +132,7 @@ export function enclosingClassMember(node: Rule.Node): Rule.Node | undefined {
 }
 
 /** `selectors` and `dynamicSelectors` are the mobile spellings. */
-const locatorHolderNames = new Set([
+export const locatorHolderNames = new Set([
   "dynamicLocators",
   "dynamicSelectors",
   "locators",
@@ -135,7 +221,9 @@ function isObject(value: unknown): value is object {
 }
 
 /** A getter or a property, so a plain method of that name is not a holder. */
-export function isLocatorHolder(member: Rule.Node | undefined): boolean {
+export function isLocatorHolder(
+  member: ClassMember | Rule.Node | undefined,
+): boolean {
   if (!member) return false;
 
   const isHolderShape =
@@ -143,7 +231,6 @@ export function isLocatorHolder(member: Rule.Node | undefined): boolean {
     (member.type === "MethodDefinition" && member.kind === "get");
   if (!isHolderShape) return false;
 
-  return (
-    member.key.type === "Identifier" && locatorHolderNames.has(member.key.name)
-  );
+  const name = memberName(member);
+  return name !== undefined && locatorHolderNames.has(name);
 }

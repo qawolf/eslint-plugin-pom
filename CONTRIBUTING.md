@@ -68,6 +68,30 @@ export class AdminLoginPage extends LoginPage { ... } // no base class named
 Following that chain needs type information a rule does not have. Path scoping
 covers it for free, and it is the same definition platform uses for a page file.
 
+### Scoping by code
+
+The rules ported from `@qawolf/pom` take the other side of that trade-off, and
+the helpers for it are shared:
+
+- `enclosingPageObject(node)` from `src/pageObject/index.js` — the nearest
+  enclosing class when its superclass is `BasePageObject`, `SubPageObject` or
+  `EntryPointPageObject`. Call it per report. `memberName`,
+  `enclosingClassMember` and `isLocatorHolder` sit beside it.
+- `isFlowModule(context.sourceCode.ast)` from `src/flow/index.js` — a module
+  that imports `flow` from `@qawolf/flows` (any subpath) or default-exports a
+  `flow(...)` call. Check it once in `create()` and return `{}` when false.
+  `isInsideFlowCallback`, `isFlowCall` and `flowCallbackOf` handle the callback.
+
+A rule scoped this way needs no `filename` in its `RuleTester` cases; it still
+needs the case for a file it must _not_ touch (a class with no base, a module
+with no `flow` import). `src/rules/testSupport.ts` has the `flow(body)` and
+`pageObject(body, base)` source builders.
+
+Which mechanism a new rule uses depends on its subject: a rule about a
+directory's contents scopes by path; a rule about the flow / page-object
+boundary, or one that must see a page object wherever it lives, scopes by code.
+Say which in the rule's doc comment.
+
 ## Rule ids
 
 `rulePrefix` is `@qawolf/pom-lint`, not `@qawolf/pom` — that is a different,
