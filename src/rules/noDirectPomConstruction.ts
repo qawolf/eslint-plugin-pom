@@ -1,6 +1,10 @@
 import type { Rule } from "eslint";
 
-import { isPageObjectFile, isThisPageExpression } from "../pageObject/index.js";
+import {
+  isPageObjectFile,
+  isPageObjectName,
+  isThisPageExpression,
+} from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
 /**
@@ -47,17 +51,6 @@ export const noDirectPomConstructionRule: PomLintRule = {
 
   severity: "warn",
 };
-
-const pageObjectSuffixes = ["Component", "Modal", "Page"];
-
-/**
- * Page objects are named for what they are. Without this, anything else handed
- * the page -- `new NetworkMonitor(this.page)` -- would be reported, and there is
- * no `this.create` to point those at.
- */
-function isPageObjectName(name: string): boolean {
-  return pageObjectSuffixes.some((suffix) => name.endsWith(suffix));
-}
 
 function enclosingClassName(node: Rule.Node): string | undefined {
   let current: Rule.Node | null = node.parent;
