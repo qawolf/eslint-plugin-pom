@@ -1,5 +1,11 @@
 import { assertExpectPairingRule } from "./rules/assertExpectPairing.js";
+import { entryPointFactoryRule } from "./rules/entryPointFactory.js";
+import { noDirectPomConstructionRule } from "./rules/noDirectPomConstruction.js";
 import { noInlineLocatorInPageObjectRule } from "./rules/noInlineLocatorInPageObject.js";
+import { noWaitForTimeoutInPomsRule } from "./rules/noWaitForTimeoutInPoms.js";
+import { noLegacySelectorsRule } from "./rules/noLegacySelectors.js";
+import { noMutableStateInPomRule } from "./rules/noMutableStateInPom.js";
+import { noPublicConstructorRule } from "./rules/noPublicConstructor.js";
 import { selectorGetterShapeRule } from "./rules/selectorGetterShape.js";
 import { typedCreateReturnRule } from "./rules/typedCreateReturn.js";
 import { webFirstAssertionsRule } from "./rules/webFirstAssertions.js";
@@ -14,7 +20,13 @@ export const rulePrefix = "@qawolf/pom-lint";
 
 const allRules: PomLintRule[] = [
   assertExpectPairingRule,
+  entryPointFactoryRule,
+  noDirectPomConstructionRule,
   noInlineLocatorInPageObjectRule,
+  noLegacySelectorsRule,
+  noMutableStateInPomRule,
+  noPublicConstructorRule,
+  noWaitForTimeoutInPomsRule,
   selectorGetterShapeRule,
   typedCreateReturnRule,
   webFirstAssertionsRule,
