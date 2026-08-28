@@ -2,6 +2,7 @@ import { assertExpectPairingRule } from "./rules/assertExpectPairing.js";
 import { entryPointFactoryRule } from "./rules/entryPointFactory.js";
 import { noDirectPomConstructionRule } from "./rules/noDirectPomConstruction.js";
 import { noInlineLocatorInPageObjectRule } from "./rules/noInlineLocatorInPageObject.js";
+import { noWaitForTimeoutInPomsRule } from "./rules/noWaitForTimeoutInPoms.js";
 import { noPublicConstructorRule } from "./rules/noPublicConstructor.js";
 import { selectorGetterShapeRule } from "./rules/selectorGetterShape.js";
 import { typedCreateReturnRule } from "./rules/typedCreateReturn.js";
@@ -21,6 +22,7 @@ const allRules: PomLintRule[] = [
   noDirectPomConstructionRule,
   noInlineLocatorInPageObjectRule,
   noPublicConstructorRule,
+  noWaitForTimeoutInPomsRule,
   selectorGetterShapeRule,
   typedCreateReturnRule,
   webFirstAssertionsRule,
