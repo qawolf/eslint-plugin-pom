@@ -1,6 +1,8 @@
 import type { Rule } from "eslint";
 
-const pagesDirectoryPrefix = "src/pages/";
+import { pagesDirectoryFrom } from "../settings.js";
+
+const pageObjectExtensions = [".ts", ".mts", ".cts"];
 
 /**
  * No host passes the workspace path verbatim: the editor lints
@@ -17,13 +19,22 @@ const pagesDirectoryPrefix = "src/pages/";
  * so the directory and extension survive encoding, and decoding could throw on
  * a stray `%` mid-lint.
  */
-export function isPageObjectFile(filename: string): boolean {
+export function isPageObjectFile(
+  filename: string,
+  pagesDirectory: string,
+): boolean {
   const path = filename.replaceAll("\\", "/");
-  if (!path.endsWith(".ts")) return false;
+  if (!pageObjectExtensions.some((extension) => path.endsWith(extension)))
+    return false;
 
-  return (
-    path.startsWith(pagesDirectoryPrefix) ||
-    path.includes(`/${pagesDirectoryPrefix}`)
+  return path.startsWith(pagesDirectory) || path.includes(`/${pagesDirectory}`);
+}
+
+/** The gate every rule opens with, so the settings lookup lives in one place. */
+export function isPageObjectContext(context: Rule.RuleContext): boolean {
+  return isPageObjectFile(
+    context.filename,
+    pagesDirectoryFrom(context.settings),
   );
 }
 

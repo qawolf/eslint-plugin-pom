@@ -2,6 +2,18 @@
 
 ESLint rules for [QA Wolf](https://www.qawolf.com) page objects.
 
+## Requirements
+
+- Node.js `>=20.19.0 <25`
+- ESLint `>=8.40.0`, **using flat config** (`eslint.config.mjs`)
+- A TypeScript parser in your config, such as
+  [`@typescript-eslint/parser`](https://typescript-eslint.io/packages/parser)
+
+This package is ESM-only, which a `.eslintrc.*` file cannot load — ESLint 8
+resolves eslintrc plugins with `require`, and that fails here with
+`ERR_PACKAGE_PATH_NOT_EXPORTED`. On ESLint 8 you need flat config turned on
+(`ESLINT_USE_FLAT_CONFIG=true`); on 9 and later it is the default.
+
 ## Install
 
 ```bash
@@ -10,26 +22,54 @@ npm i --save-dev @qawolf/eslint-plugin-pom
 
 ## Use
 
-Register the plugin and enable the rules it ships:
+Point a TypeScript parser at your page objects, then spread the recommended
+config, which turns on every rule at its shipped severity:
 
 ```js
 // eslint.config.mjs
-import * as pomLint from "@qawolf/eslint-plugin-pom";
+import tsParser from "@typescript-eslint/parser";
+import pomLint from "@qawolf/eslint-plugin-pom";
 
 export default [
+  { files: ["**/*.ts"], languageOptions: { parser: tsParser } },
+  pomLint.configs.recommended,
+];
+```
+
+The parser is not optional. Without one ESLint reads a page object as plain
+JavaScript and reports `Parsing error` instead of linting it.
+
+To pick rules yourself, register the plugin and name them:
+
+```js
+export default [
+  { files: ["**/*.ts"], languageOptions: { parser: tsParser } },
   {
-    plugins: { [pomLint.rulePrefix]: { rules: pomLint.rules } },
-    rules: pomLint.ruleSeverities,
+    plugins: { "@qawolf/pom-lint": pomLint },
+    rules: { "@qawolf/pom-lint/no-inline-locator-in-page-object": "error" },
   },
 ];
 ```
 
-`ruleSeverities` is keyed by the ids that arrangement produces, so the two stay
-in step. To pick rules individually, name them yourself instead:
+## Where your page objects live
+
+Every rule ignores files outside your page-object directory, which defaults to
+`src/pages/`. If yours live somewhere else, say so once and all the rules
+follow:
 
 ```js
-rules: { "@qawolf/pom-lint/no-inline-locator-in-page-object": "error" }
+export default [
+  { files: ["**/*.ts"], languageOptions: { parser: tsParser } },
+  { settings: { "@qawolf/pom-lint": { pagesDirectory: "e2e/pages" } } },
+  pomLint.configs.recommended,
+];
 ```
+
+A leading `./` and a trailing `/` are both accepted. Every rule reads `.ts`,
+`.mts` and `.cts` files under the directory. A value that cannot name a
+directory raises an error rather than falling back to the default, because a
+rule scoped to a directory that does not exist reports nothing and reads
+exactly like a clean workspace.
 
 ## Rules
 
@@ -415,3 +455,17 @@ Applies to `.ts` files under `src/pages/`. Reading a value to use it is fine —
 only reads inside `expect(await ...)` are reported.
 
 Ships at `warn`.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, the constraints a rule has to
+respect, and how releases are cut.
+
+## Security
+
+Report vulnerabilities as described in [SECURITY.md](SECURITY.md). Please do not
+open a public issue for them.
+
+## License
+
+[MIT](LICENSE)

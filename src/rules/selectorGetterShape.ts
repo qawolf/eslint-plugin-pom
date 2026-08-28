@@ -3,7 +3,7 @@ import type { Expression } from "estree";
 
 import {
   isLocatorHolderName,
-  isPageObjectFile,
+  isPageObjectContext,
   nodeType,
   typeAssertionOperand,
 } from "../pageObject/index.js";
@@ -27,7 +27,7 @@ import type { PomLintRule } from "../types.js";
 export const selectorGetterShapeRule: PomLintRule = {
   module: {
     create(context) {
-      if (!isPageObjectFile(context.filename)) return {};
+      if (!isPageObjectContext(context)) return {};
 
       return {
         MethodDefinition(node) {
@@ -67,6 +67,11 @@ export const selectorGetterShapeRule: PomLintRule = {
       };
     },
     meta: {
+      docs: {
+        description:
+          "Require the locator holder to be a private getter returning `as const`.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#selector-getter-shape",
+      },
       messages: {
         missingAsConst:
           "Add `as const` to the object `{{name}}` returns: `return { ... } as const;`. Without it TypeScript only knows the object holds locators, not which names are in it, so a typo like `this.{{name}}.signInButtn` compiles and fails when the test runs instead of being underlined in the editor.",
@@ -77,6 +82,8 @@ export const selectorGetterShapeRule: PomLintRule = {
         useGetter:
           "`{{name}}` is a field. Change it to `private get {{name}}()` returning the same object, so it matches every other page object and is built each time it is read rather than once when the page object is constructed.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 

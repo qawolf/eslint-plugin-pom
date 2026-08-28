@@ -1,7 +1,7 @@
 import type { Rule } from "eslint";
 
 import {
-  isPageObjectFile,
+  isPageObjectContext,
   isPageObjectName,
   isThisPageExpression,
 } from "../pageObject/index.js";
@@ -29,7 +29,7 @@ const baseClasses = new Set([
 export const correctBaseClassRule: PomLintRule = {
   module: {
     create(context) {
-      if (!isPageObjectFile(context.filename)) return {};
+      if (!isPageObjectContext(context)) return {};
 
       return {
         ClassBody(node) {
@@ -68,12 +68,19 @@ export const correctBaseClassRule: PomLintRule = {
       };
     },
     meta: {
+      docs: {
+        description:
+          "A class that drives the page extends a page-object base, so it gets `this.page`, `this.create()` and the page hooks.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#correct-base-class",
+      },
       messages: {
         missingBase:
           "`{{name}}` reads `this.page`, so it is a page object, but it extends nothing -- and `this.page`, `this.create()` and the page hooks all come from the base class. Extend `BasePageObject`, or `EntryPointPageObject` if a flow starts on this page, or `SubPageObject<Parent>` if it is part of another page. Import the base from wherever the other files here import it.",
         unknownBase:
           "`{{name}}` extends `{{superClass}}`, which is not a page object base class, so it gets none of `this.page`, `this.create()` or the page hooks. Extend `BasePageObject`, `EntryPointPageObject` or `SubPageObject<Parent>` instead -- and if `{{superClass}}` was giving this class something, move that across first.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 

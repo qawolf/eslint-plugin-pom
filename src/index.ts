@@ -10,14 +10,10 @@ import { noPublicConstructorRule } from "./rules/noPublicConstructor.js";
 import { selectorGetterShapeRule } from "./rules/selectorGetterShape.js";
 import { typedCreateReturnRule } from "./rules/typedCreateReturn.js";
 import { webFirstAssertionsRule } from "./rules/webFirstAssertions.js";
+import { rulePrefix } from "./settings.js";
 import type { PomLintRule } from "./types.js";
 
-/**
- * The name a config registers this plugin under. Deliberately not `@qawolf/pom`
- * -- that is a different, published package, and sharing the name would make a
- * rule id look like it ships from there.
- */
-export const rulePrefix = "@qawolf/pom-lint";
+export { rulePrefix } from "./settings.js";
 
 const allRules: PomLintRule[] = [
   assertExpectPairingRule,
@@ -47,3 +43,19 @@ export const rules = Object.fromEntries(
 export const ruleSeverities = Object.fromEntries(
   allRules.map((rule) => [`${rulePrefix}/${rule.name}`, rule.severity]),
 );
+
+const plugin = { meta: { name: "@qawolf/eslint-plugin-pom" }, rules };
+
+/**
+ * A ready-made flat config, so the common case is one spread rather than a
+ * `plugins` block the consumer has to keep in step with `ruleSeverities`.
+ */
+export const configs = {
+  recommended: {
+    files: ["**/*.ts", "**/*.mts", "**/*.cts"],
+    plugins: { [rulePrefix]: plugin },
+    rules: ruleSeverities,
+  },
+};
+
+export default { ...plugin, configs };

@@ -1,6 +1,9 @@
 import type { Rule } from "eslint";
 
-import { enclosingClassMember, isPageObjectFile } from "../pageObject/index.js";
+import {
+  enclosingClassMember,
+  isPageObjectContext,
+} from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
 const untypedReturns = new Set([
@@ -28,7 +31,7 @@ const untypedReturns = new Set([
 export const typedCreateReturnRule: PomLintRule = {
   module: {
     create(context) {
-      if (!isPageObjectFile(context.filename)) return {};
+      if (!isPageObjectContext(context)) return {};
 
       return {
         ReturnStatement(node) {
@@ -65,12 +68,19 @@ export const typedCreateReturnRule: PomLintRule = {
       };
     },
     meta: {
+      docs: {
+        description:
+          "A method handing back another page object declares which one, so the caller's use of it is type-checked.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#typed-create-return",
+      },
       messages: {
         missingReturnType:
           "`{{method}}` hands back a `{{page}}`, so give it the return type `: {{suggestion}}`. Without it the caller gets whatever the call infers -- `BasePageObject` or `any` -- and `{{page}}`'s own methods are either missing or unchecked.",
         uselessReturnType:
           "`{{method}}` hands back a `{{page}}` but its return type says `{{current}}`, which tells the caller nothing about it. Change the return type to `: {{suggestion}}`.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 

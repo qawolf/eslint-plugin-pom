@@ -24,20 +24,27 @@ AST work:
 - **No autofixes.** Consumers drop `fix` before the diagnostic reaches an
   editor, so describe the fix in the message instead.
 
+The unit tests run on the pinned `eslint` devDependency, which is 9, using its
+flat `RuleTester`. The whole peer range is covered by `scripts/smoke.sh`, which
+installs the packed tarball and lints a page object under ESLint 8, 9 and 10.
+Run one with `./scripts/smoke.sh 8`.
+
 ### Which files should the rule check?
 
 A rule sees every file in a workspace, so it has to recognise its own subject.
-Page objects live under `src/pages/`, so gate on the path and bail out early:
+Page objects live under the workspace's page-object directory, so gate on the
+path and bail out early:
 
 ```ts
 create(context) {
-  if (!isPageObjectFile(context.filename)) return {};
+  if (!isPageObjectContext(context)) return {};
   return { MemberExpression(node) { ... } };
 }
 ```
 
-`isPageObjectFile` comes from `src/pageObject/index.js`. Use it rather than
-comparing paths yourself, because **no host passes the workspace path
+`isPageObjectContext` comes from `src/pageObject/index.js`, and reads the
+directory from settings so a workspace can move its page objects. Use it rather
+than comparing paths yourself, because **no host passes the workspace path
 verbatim**:
 
 | Host                 | `context.filename`                                            |
@@ -66,7 +73,7 @@ export class AdminLoginPage extends LoginPage { ... } // no base class named
 ```
 
 Following that chain needs type information a rule does not have. Path scoping
-covers it for free, and it is the same definition platform uses for a page file.
+covers it for free.
 
 ## Rule ids
 
@@ -77,34 +84,13 @@ from there.
 ## Releasing
 
 Version-driven: bump `version` in `package.json` in a pull request, and merging
-to `main` publishes to GitHub Packages.
+to `main` publishes to npm. See [`RELEASING.md`](RELEASING.md) for the full
+process.
 
-**Adding or changing a rule takes two pull requests, not one.**
+Bump `version` in the same pull request as the rule. Without the bump nothing
+is published and the rule never leaves this repo.
 
-1. Bump `version` here, in the same pull request as the rule. Merging publishes
-   it. Without the bump nothing is published and the rule never leaves this
-   repo.
-2. In `qawolf/platform`, install the published version and commit both the
-   lockfile change and the regenerated `ts-worker.js`:
-
-   ```bash
-   npm install @qawolf/eslint-plugin-pom@latest
-   npx nx run apex-frontend:gen:ts-worker
-   ```
-
-   The dependency _range_ usually needs no edit — a new version inside the
-   existing caret satisfies it. The lockfile is what has to move.
-
-The second pull request is what actually ships the rule. Skipping it leaves the
-rule published and unused, which looks identical to a rule that is not working.
-
-**Platform cannot pick a rule up on its own**, so there is no version of this
-where you skip step 2:
-
-- CI installs with `npm ci`, which resolves the lockfile exactly. A rebuild
-  re-downloads the same version, caret range or not.
-- The editor's linter is a committed bundle. `apex-frontend`'s `build` does not
-  depend on `gen:ts-worker`, so nothing regenerates it on deploy, and the
-  generated-output drift check fails if the committed copy is stale.
-
-> **Access:** if you cannot open that pull request, ask in #engineering.
+Publishing alone ships nothing, either: consumers install from committed
+lockfiles, so a new version reaches a workspace only when that workspace's
+lockfile moves. After the release, update each consumer you are responsible
+for.

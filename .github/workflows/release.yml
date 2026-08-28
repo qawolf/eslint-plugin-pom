@@ -1,7 +1,9 @@
 name: Release
 
-# Version-driven: publishes when the version in package.json is higher than the
-# version already on the registry. To cut a release, bump it and merge to main.
+# Version-driven publishing: this workflow publishes to npm only when the
+# version in package.json is higher than the version already on the registry.
+# To cut a release, bump the version in a PR and merge it to main.
+# See RELEASING.md.
 
 on:
   push:
@@ -13,31 +15,45 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
-  packages: write
+  contents: write # create tags and GitHub Releases
+  id-token: write # OIDC identity for npm trusted publishing (no NPM_TOKEN needed)
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so release notes can diff since the last tag
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-          registry-url: "https://npm.pkg.github.com"
-          scope: "@qawolf"
+          registry-url: "https://registry.npmjs.org"
+
+      # Trusted publishing (OIDC) requires npm >= 11.5.1; Node 22 ships with npm 10.
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@latest
+
       - run: npm ci
-      - run: npm test
-      - name: Publish if the version was bumped
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Publish to npm if version bumped
+        id: publish
+        run: ./scripts/publish.sh
+
+      - name: Tag and create GitHub Release
+        if: steps.publish.outputs.published == 'true'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          set -e
-          local_version=$(node -p "require('./package.json').version")
-          published=$(npm view "@qawolf/eslint-plugin-pom@$local_version" version 2>/dev/null || true)
-          if [ -n "$published" ]; then
-            echo "$local_version is already published; nothing to do."
-            exit 0
-          fi
-          npm publish
+          tag="v${{ steps.publish.outputs.version }}"
+          git tag "$tag"
+          git push origin "$tag"
+          gh release create "$tag" --title "$tag" --generate-notes

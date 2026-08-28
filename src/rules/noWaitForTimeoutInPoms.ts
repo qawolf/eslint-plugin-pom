@@ -1,6 +1,6 @@
 import type { Rule } from "eslint";
 
-import { isPageObjectFile } from "../pageObject/index.js";
+import { isPageObjectContext } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
 const bannedWaits = new Map([
@@ -22,7 +22,7 @@ const bannedWaits = new Map([
 export const noWaitForTimeoutInPomsRule: PomLintRule = {
   module: {
     create(context) {
-      if (!isPageObjectFile(context.filename)) return {};
+      if (!isPageObjectContext(context)) return {};
 
       return {
         CallExpression(node) {
@@ -40,12 +40,19 @@ export const noWaitForTimeoutInPomsRule: PomLintRule = {
       };
     },
     meta: {
+      docs: {
+        description:
+          "Wait on a locator or a condition instead of a fixed duration, so the wait ends when the page is ready rather than when a timer runs out.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#no-wait-for-timeout-in-poms",
+      },
       messages: {
         fixedSleep:
           "`waitForTimeout()` waits for a duration, and a fixed sleep passes on a fast machine and fails on a slow one. Wait on the condition instead: `await this.locators.someElement.waitFor()` for an element, `await this.page.waitForURL(pattern)` after a navigation, or `await expect(...)` for a state. If nothing observable covers it, keep the `waitForTimeout()` call and put a comment saying what it is waiting for, on the same line or the line above.",
         selectorWait:
           "`waitForSelector()` returns before the element is stable, and it takes a selector string rather than a locator. Wait on the locator instead -- `await this.locators.someElement.waitFor()`, or `await expect(this.locators.someElement).toBeVisible()` for a state. A comment does not excuse this one the way it excuses `waitForTimeout()`: there is already a locator to wait on.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 
