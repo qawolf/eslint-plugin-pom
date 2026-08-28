@@ -124,6 +124,44 @@ and to the mobile `selectors` and `dynamicSelectors`.
 
 Ships at `warn`.
 
+### `typed-create-return`
+
+A method handing back another page object says which one.
+
+```ts
+// Reported
+async goToDashboard() { return this.create("DashboardPage"); }
+async goToDashboard(): Promise<any> { return this.create("DashboardPage"); }
+
+// Expected
+async goToDashboard(): Promise<DashboardPage> {
+  return this.create("DashboardPage");
+}
+```
+
+Without the return type the caller gets whatever the call infers — `BasePageObject`
+or `any` — so `DashboardPage`'s own methods either go missing or type-check
+against nothing. `any`, `unknown`, `void` and their `Promise<…>` spellings count
+as no return type, since none of them name the class.
+
+Two shapes are covered, both of which hand a page object to the caller:
+
+```ts
+return this.create("DashboardPage"); // a sibling from the registry
+return PreviewPage.createFromPage(popupPage); // a new tab wrapped in its class
+```
+
+The suggested type follows the method: `Promise<DashboardPage>` for an `async`
+method, `DashboardPage` for a synchronous one. `return await this.create(…)`
+counts as the same shape.
+
+A dynamic name — `this.create(nextPage)` — is left alone, since there is no class
+name to suggest.
+
+Applies to `.ts` files under `src/pages/`.
+
+Ships at `warn`.
+
 ### `web-first-assertions`
 
 Assert on the locator, not on a value read out of it.

@@ -1,6 +1,7 @@
 import { assertExpectPairingRule } from "./rules/assertExpectPairing.js";
 import { noInlineLocatorInPageObjectRule } from "./rules/noInlineLocatorInPageObject.js";
 import { selectorGetterShapeRule } from "./rules/selectorGetterShape.js";
+import { typedCreateReturnRule } from "./rules/typedCreateReturn.js";
 import { webFirstAssertionsRule } from "./rules/webFirstAssertions.js";
 import type { PomLintRule } from "./types.js";
 
@@ -15,6 +16,7 @@ const allRules: PomLintRule[] = [
   assertExpectPairingRule,
   noInlineLocatorInPageObjectRule,
   selectorGetterShapeRule,
+  typedCreateReturnRule,
   webFirstAssertionsRule,
 ];
 
