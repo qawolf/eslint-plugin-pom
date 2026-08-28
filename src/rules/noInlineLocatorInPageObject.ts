@@ -3,30 +3,15 @@ import type { Rule } from "eslint";
 import {
   enclosingClassMember,
   isLocatorHolder,
-  isPageObjectFile,
+  isPageObjectContext,
   isThisPageExpression,
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * Page objects keep every locator in a named getter.
- *
- * ```ts
- * // Reported
- * async signIn() {
- *   await this.page.getByRole("button", { name: "Sign in" }).click();
- * }
- *
- * // Expected
- * private get locators() {
- *   return { signInButton: this.page.getByRole("button") } as const;
- * }
- * ```
- */
 export const noInlineLocatorInPageObjectRule: PomLintRule = {
   module: {
     create(context) {
-      if (!isPageObjectFile(context.filename)) return {};
+      if (!isPageObjectContext(context)) return {};
 
       return {
         MemberExpression(node) {
@@ -41,10 +26,17 @@ export const noInlineLocatorInPageObjectRule: PomLintRule = {
       };
     },
     meta: {
+      docs: {
+        description:
+          "Keep locators in a named getter, so a method body reads as the action it performs and a changed selector is fixed in one place.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#no-inline-locator-in-page-object",
+      },
       messages: {
         inlineLocator:
           "This `{{name}}` call builds a locator in the middle of a method. Give it a name in the `locators` getter -- `private get locators() { return { signInButton: this.page.{{name}}(...) } as const; }` -- and use `this.locators.signInButton` here instead. Then another method needing the same element reuses the name, and when the markup changes there is one line to fix rather than every place it was written out. Use `dynamicLocators` if the locator needs an argument, or `selectors` / `dynamicSelectors` on mobile.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 

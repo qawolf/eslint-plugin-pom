@@ -1,51 +1,42 @@
-import { isExpectCall } from "./noExpectInFlows.js";
+import type { Rule } from "eslint";
+
 import {
   enclosingClassMember,
-  enclosingPageObject,
-  memberName,
+  isPageObjectContext,
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * Inside a page object, only an `assert*()` method asserts.
- *
- * ```ts
- * // Reported
- * async save() {
- *   await this.locators.save.click();
- *   await expect(this.locators.toast).toBeVisible();
- * }
- *
- * // Expected
- * async save() {
- *   await this.locators.save.click();
- * }
- * async assertSaved() {
- *   await expect(this.locators.toast).toBeVisible();
- * }
- * ```
- *
- * The name is the contract: a flow reading `await settings.save()` cannot see
- * that it also asserts, and a flow that wants to save without asserting --
- * because this run expects failure -- has no way to. Split, each can be
- * called on its own and the assertion is reusable.
- */
 export const assertExpectPairingRule: PomLintRule = {
   module: {
     create(context) {
+      if (!isPageObjectContext(context)) return {};
+
       return {
         CallExpression(node) {
-          if (!isExpectCall(node.callee)) return;
-          if (!enclosingPageObject(node)) return;
+          if (node.callee.type !== "Identifier") return;
+          if (node.callee.name !== "expect") return;
 
-          const member = enclosingClassMember(node);
-          if (member?.type !== "MethodDefinition") return;
+          if (isInsideLoop(node)) return;
 
-          const name = memberName(member);
-          if (name === undefined || isAssertMethodName(name)) return;
+          const method = enclosingClassMember(node);
+          if (!method || method.type !== "MethodDefinition") return;
+          if (method.kind === "constructor") return;
+          if (method.key.type !== "Identifier") return;
+
+          const name = method.key.name;
+          if (isAssertName(name) || isSyncPointName(name)) return;
+
+          if (isExpectName(name)) {
+            context.report({
+              data: { name, suggestion: renamedFromExpect(name) },
+              messageId: "expectPrefixedName",
+              node,
+            });
+            return;
+          }
 
           context.report({
-            data: { name, suggested: `assert${capitalize(name)}` },
+            data: { name, suggestion: assertName(name) },
             messageId: "expectOutsideAssert",
             node,
           });
@@ -53,22 +44,75 @@ export const assertExpectPairingRule: PomLintRule = {
       };
     },
     meta: {
+      docs: {
+        description:
+          "Keep assertions in `assert*` methods, so a flow can perform an action without also running its checks.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#assert-expect-pairing",
+      },
       messages: {
         expectOutsideAssert:
-          "`{{name}}()` asserts, but its name does not say so. Move the `expect` into an `assert*()` method -- `{{suggested}}()` if it is the whole of the check -- and have the flow call both. A flow reading `{{name}}()` cannot see that it asserts, and one that needs the action without the check cannot get it.",
+          "`{{name}}` acts and asserts. Move the `expect` calls into a new `{{suggestion}}` method and call that from the flow. An assertion method holds no actions, and its name starts with `assert`.",
+        expectPrefixedName:
+          "The `{{name}}` method only asserts, so its name should start with `assert`: rename it to `{{suggestion}}`.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 
   name: "assert-expect-pairing",
 
-  severity: "error",
+  severity: "warn",
 };
 
-function isAssertMethodName(name: string): boolean {
+function isAssertName(name: string): boolean {
   return /^assert[A-Z]/.test(name);
 }
 
-function capitalize(name: string): string {
-  return name.charAt(0).toUpperCase() + name.slice(1);
+/** A `waitFor*` method's `expect` is the wait itself, not an assertion. */
+function isSyncPointName(name: string): boolean {
+  return /^waitFor([A-Z]|$)/.test(name);
+}
+
+const loopTypes = new Set([
+  "DoWhileStatement",
+  "ForInStatement",
+  "ForOfStatement",
+  "ForStatement",
+  "WhileStatement",
+]);
+
+/**
+ * Stops at the enclosing member, so this is the `expect`'s own loop rather than
+ * one anywhere above it. An `expect` inside a loop is the per-iteration settle
+ * wait a cleanup method needs, not an assertion to move out.
+ */
+function isInsideLoop(node: Rule.Node): boolean {
+  let current: Rule.Node | null = node.parent;
+
+  while (current) {
+    if (loopTypes.has(current.type)) return true;
+    if (
+      current.type === "MethodDefinition" ||
+      current.type === "PropertyDefinition"
+    )
+      return false;
+
+    current = current.parent;
+  }
+
+  return false;
+}
+
+/** `expectHeadingVisible` is already an assertion method under older naming. */
+function isExpectName(name: string): boolean {
+  return /^expect[A-Z]/.test(name);
+}
+
+function renamedFromExpect(name: string): string {
+  return `assert${name.slice("expect".length)}()`;
+}
+
+function assertName(name: string): string {
+  return `assert${name.charAt(0).toUpperCase()}${name.slice(1)}()`;
 }

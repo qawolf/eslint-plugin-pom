@@ -1,36 +1,34 @@
 import { aaaBannerFormatRule } from "./rules/aaaBannerFormat.js";
 import { assertExpectPairingRule } from "./rules/assertExpectPairing.js";
+import { correctBaseClassRule } from "./rules/correctBaseClass.js";
 import { entryPointFactoryRule } from "./rules/entryPointFactory.js";
 import { fileNamingConventionRule } from "./rules/fileNamingConvention.js";
 import { flowExportStructureRule } from "./rules/flowExportStructure.js";
 import { noAnySharedStateRule } from "./rules/noAnySharedState.js";
 import { noCodeBetweenStepsRule } from "./rules/noCodeBetweenSteps.js";
+import { noDirectPomConstructionRule } from "./rules/noDirectPomConstruction.js";
 import { noExpectInFlowsRule } from "./rules/noExpectInFlows.js";
 import { noFetchAxiosInFlowsRule } from "./rules/noFetchAxiosInFlows.js";
 import { noInlineLocatorInPageObjectRule } from "./rules/noInlineLocatorInPageObject.js";
 import { noLegacySelectorsRule } from "./rules/noLegacySelectors.js";
-import { noMutableStateInPageObjectRule } from "./rules/noMutableStateInPageObject.js";
+import { noMutableStateInPomRule } from "./rules/noMutableStateInPom.js";
 import { noNonNullAssertionRule } from "./rules/noNonNullAssertion.js";
-import { noPageObjectConstructorRule } from "./rules/noPageObjectConstructor.js";
 import { noParameterPropertiesRule } from "./rules/noParameterProperties.js";
+import { noPublicConstructorRule } from "./rules/noPublicConstructor.js";
 import { noRawPageInFlowsRule } from "./rules/noRawPageInFlows.js";
 import { noSelectorsInFlowsRule } from "./rules/noSelectorsInFlows.js";
-import { noWaitForTimeoutRule } from "./rules/noWaitForTimeout.js";
+import { noWaitForTimeoutInPomsRule } from "./rules/noWaitForTimeoutInPoms.js";
 import { requireEnvPatternRule } from "./rules/requireEnvPattern.js";
 import { requireLocatorJsdocRule } from "./rules/requireLocatorJsdoc.js";
-import { requirePageObjectBaseClassRule } from "./rules/requirePageObjectBaseClass.js";
 import { requireValueImportForCreatedPageRule } from "./rules/requireValueImportForCreatedPage.js";
 import { selectorGetterShapeRule } from "./rules/selectorGetterShape.js";
 import { testAaaCommentsRule } from "./rules/testAaaComments.js";
+import { typedCreateReturnRule } from "./rules/typedCreateReturn.js";
 import { webFirstAssertionsRule } from "./rules/webFirstAssertions.js";
+import { rulePrefix } from "./settings.js";
 import type { PomLintRule } from "./types.js";
 
-/**
- * The name a config registers this plugin under. Deliberately not `@qawolf/pom`
- * -- that is a different, published package, and sharing the name would make a
- * rule id look like it ships from there.
- */
-export const rulePrefix = "@qawolf/pom-lint";
+export { rulePrefix } from "./settings.js";
 
 const allRules: PomLintRule[] = [
   // The flow / page-object boundary.
@@ -48,16 +46,18 @@ const allRules: PomLintRule[] = [
 
   // Page-object shape and correctness.
   assertExpectPairingRule,
+  correctBaseClassRule,
   entryPointFactoryRule,
+  noDirectPomConstructionRule,
   noInlineLocatorInPageObjectRule,
   noLegacySelectorsRule,
-  noMutableStateInPageObjectRule,
-  noPageObjectConstructorRule,
-  noWaitForTimeoutRule,
+  noMutableStateInPomRule,
+  noPublicConstructorRule,
+  noWaitForTimeoutInPomsRule,
   requireLocatorJsdocRule,
-  requirePageObjectBaseClassRule,
   requireValueImportForCreatedPageRule,
   selectorGetterShapeRule,
+  typedCreateReturnRule,
   webFirstAssertionsRule,
 
   // Workspace conventions and TypeScript hygiene.
@@ -67,16 +67,22 @@ const allRules: PomLintRule[] = [
   requireEnvPatternRule,
 ];
 
-/** ESLint's plugin contract: unprefixed names, since the config supplies the prefix. */
 export const rules = Object.fromEntries(
   allRules.map((rule) => [rule.name, rule.module]),
 );
 
-/**
- * Severities keyed by the id `rules` registered under a `plugins` block, so a
- * consumer can spread this straight into `rules` rather than restating a
- * severity per rule.
- */
 export const ruleSeverities = Object.fromEntries(
   allRules.map((rule) => [`${rulePrefix}/${rule.name}`, rule.severity]),
 );
+
+const plugin = { meta: { name: "@qawolf/eslint-plugin-pom" }, rules };
+
+export const configs = {
+  recommended: {
+    files: ["**/*.ts", "**/*.mts", "**/*.cts"],
+    plugins: { [rulePrefix]: plugin },
+    rules: ruleSeverities,
+  },
+};
+
+export default { ...plugin, configs };

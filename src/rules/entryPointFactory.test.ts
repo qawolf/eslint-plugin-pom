@@ -1,76 +1,87 @@
-import { RuleTester } from "eslint";
-import { createRequire } from "node:module";
-
+import { pagePath, ruleTester } from "../testHelpers.js";
 import { entryPointFactoryRule } from "./entryPointFactory.js";
 
-const require = createRequire(import.meta.url);
-
-const ruleTester = new RuleTester({
-  parser: require.resolve("@typescript-eslint/parser"),
-  parserOptions: { ecmaVersion: "latest", sourceType: "module" },
-});
-
-const create = `static async create(options?: InitializeBrowserOptions) {
-  return new this(await this.initializeBrowser(options));
-}`;
+const missingCreate = [{ messageId: "missingCreate" }];
 
 ruleTester.run("entry-point-factory", entryPointFactoryRule.module, {
   invalid: [
     {
-      code: `class LoginPage extends EntryPointPageObject {
+      code: `export class SignInPage extends EntryPointPageObject {
+        async signIn() { await this.locators.button.click(); }
+      }`,
+      errors: missingCreate,
+      filename: pagePath,
+    },
+    {
+      code: `export class SignInPage extends EntryPointPageObject {
+        async create() { return this; }
+      }`,
+      errors: missingCreate,
+      filename: pagePath,
+    },
+    {
+      code: `export class SignInPage extends EntryPointPageObject {
+        static create = 1;
+      }`,
+      errors: missingCreate,
+      filename: pagePath,
+    },
+    {
+      code: `export class SignInPage extends EntryPointPageObject {
+        static async open(): Promise<SignInPage> { return this.build(); }
+      }`,
+      errors: missingCreate,
+      filename: pagePath,
+    },
+    {
+      code: `const SignInPage = class extends EntryPointPageObject {
         async signIn() {}
-      }`,
-      errors: [{ data: { name: "LoginPage" }, messageId: "missingCreate" }],
+      };`,
+      errors: missingCreate,
+      filename: pagePath,
     },
     {
-      // An instance method named `create` is not the factory.
-      code: `class LoginPage extends EntryPointPageObject {
-        async create() {}
-      }`,
-      errors: [{ messageId: "missingCreate" }],
-    },
-    {
-      // A static property is not the factory either.
-      code: `class LoginPage extends EntryPointPageObject {
-        static create = () => {};
-      }`,
-      errors: [{ messageId: "missingCreate" }],
-    },
-    {
-      code: `export const LoginPage = class extends EntryPointPageObject {};`,
-      errors: [
-        { data: { name: "This entry point" }, messageId: "missingCreate" },
-      ],
+      code: `export class SignInPage extends EntryPointPageObject {}`,
+      errors: missingCreate,
+      filename: "file:///src/pages/auth/sign-in-page.ts",
     },
   ],
   valid: [
     {
-      code: `class LoginPage extends EntryPointPageObject {
-        ${create}
-        async signIn() {}
-      }`,
-    },
-    {
-      // The factory may do more than construct -- a `goto`, a sign-in.
-      code: `class LoginPage extends EntryPointPageObject {
-        static async create(options?: InitializeBrowserOptions) {
-          const entry = new this(await this.initializeBrowser(options));
-          await entry.goto();
-          return entry;
+      code: `export class SignInPage extends EntryPointPageObject {
+        static async create(options: CreateOptions = {}): Promise<SignInPage> {
+          const page = await this.launch(options);
+          return new SignInPage(page);
         }
       }`,
+      filename: pagePath,
     },
     {
-      // A shared base leaves the factory to its subclasses.
-      code: `abstract class WorkspaceEntryPoint extends EntryPointPageObject {}`,
+      code: `export class SignInPage extends EntryPointPageObject {
+        static create(): SignInPage { return new SignInPage(page); }
+      }`,
+      filename: pagePath,
     },
     {
-      // Not an entry point.
-      code: `class SettingsPage extends BasePageObject {}`,
+      // Only entry points need the factory.
+      code: `export class DashboardPage extends BasePageObject {
+        async open() {}
+      }`,
+      filename: pagePath,
     },
     {
-      // A subclass of a workspace entry point names no base class here.
-      code: `class LoginPage extends WorkspaceEntryPoint {}`,
+      code: `export class ProfilePanel extends SubPageObject<DashboardPage> {
+        async open() {}
+      }`,
+      filename: pagePath,
+    },
+    {
+      code: `export class Helper { async run() {} }`,
+      filename: pagePath,
+    },
+    {
+      code: `export class SignInPage extends EntryPointPageObject {}`,
+      filename: "src/flows/checkout.flow.ts",
     },
   ],
 });

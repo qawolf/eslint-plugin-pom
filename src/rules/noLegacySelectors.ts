@@ -1,52 +1,32 @@
-import type { Rule } from "eslint";
+import type { Expression, SpreadElement } from "estree";
 
-import { enclosingPageObject } from "../pageObject/index.js";
+import { isPageObjectContext } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * No XPath and no retired selector-engine syntax in a page object's locators.
- *
- * ```ts
- * // Reported
- * this.page.locator("//button[@id='save']")
- * this.page.locator("text=Save")
- * this.page.locator("css=.form >> text=Save")
- *
- * // Expected
- * this.page.getByRole("button", { name: "Save" })
- * this.page.locator(".form").getByText("Save")
- * ```
- *
- * Only the string handed to `locator()` / `frameLocator()` is classified, so
- * nothing else that happens to contain `//` is touched. The `:text()` /
- * `:has-text()` pseudo-classes are current Playwright CSS and pass.
- */
+const selectorMethods = new Set(["frameLocator", "locator"]);
+
 export const noLegacySelectorsRule: PomLintRule = {
   module: {
     create(context) {
+      if (!isPageObjectContext(context)) return {};
+
       return {
         CallExpression(node) {
-          const { callee } = node;
-          if (callee.type !== "MemberExpression" || callee.computed) return;
-          if (callee.property.type !== "Identifier") return;
-          if (
-            callee.property.name !== "locator" &&
-            callee.property.name !== "frameLocator"
-          )
-            return;
+          if (node.callee.type !== "MemberExpression") return;
+          if (node.callee.property.type !== "Identifier") return;
+          if (!selectorMethods.has(node.callee.property.name)) return;
 
-          const [selector] = node.arguments;
-          if (!selector) return;
+          const [argument] = node.arguments;
+          if (!argument) return;
 
-          for (const text of staticText(selector)) {
+          for (const text of staticStrings(argument)) {
             const messageId = classify(text);
             if (!messageId) continue;
-            if (!enclosingPageObject(node)) return;
 
             context.report({
               data: { text: text.trim().slice(0, 40) },
               messageId,
-              node: selector,
+              node: argument,
             });
             return;
           }
@@ -54,54 +34,49 @@ export const noLegacySelectorsRule: PomLintRule = {
       };
     },
     meta: {
-      messages: {
-        chainCombinator:
-          "Chain locators instead of `>>` in `{{text}}`: `.locator(a).locator(b)`, or `.locator(a).getByText(...)`. The `>>` engine chain is the pre-locator syntax; each link of a chained locator is its own readable step. (Migrating: rewrite only when the result targets the same element.)",
-        legacyEngine:
-          "Drop the engine prefix in `{{text}}`: `text=` is `getByText()`, `id=x` is `#x`, `css=` is just the selector. The prefix is the pre-locator syntax, and the locator methods are what the rest of the page object uses. (Migrating: rewrite only when the result targets the same element.)",
-        xpath:
-          "Replace the XPath `{{text}}` with a role, text or CSS locator. XPath is coupled to the DOM tree, so any structural change breaks it, and it cannot see into a shadow root. (Migrating: rewrite only when the result targets the same element.)",
+      docs: {
+        description:
+          "Use `getBy*` or plain CSS instead of XPath and the deprecated Playwright selector engines, which break when the markup moves.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#no-legacy-selectors",
       },
+      messages: {
+        noChainCombinator:
+          '`{{text}}` uses `>>`, old Playwright syntax for two selectors in one string. Chain them instead: `.locator("form").locator("button")`. Only rewrite it when the new form finds the same element -- satisfying this rule is not a reason to change what the test acts on.',
+        noLegacyEngine:
+          '`{{text}}` uses an old Playwright engine prefix. Current Playwright takes a plain CSS selector or a `getBy*` method: `text=Sign in` becomes `getByText("Sign in")`, `id=submit` becomes `#submit`, and `css=` can be dropped. Only rewrite it when the new form finds the same element.',
+        noXpath:
+          "`{{text}}` is XPath, which describes a path through the markup: it breaks as soon as anything is wrapped or moved, and it cannot see into a shadow DOM. Use `getByRole`, `getByText`, or a CSS selector on something stable like a test id. Only rewrite it when the new form finds the same element.",
+      },
+      schema: [],
+      type: "suggestion",
     },
   },
 
   name: "no-legacy-selectors",
 
-  severity: "error",
+  severity: "warn",
 };
 
-type MessageId = "chainCombinator" | "legacyEngine" | "xpath";
-
-function classify(selector: string): MessageId | undefined {
-  const text = selector.trim();
+function classify(value: string): string | undefined {
+  const text = value.trim();
   if (
     text.startsWith("//") ||
     text.startsWith("(//") ||
     text.startsWith("xpath=")
   )
-    return "xpath";
-  if (/^(css|text|id)=/.test(text)) return "legacyEngine";
-  if (text.includes(">>")) return "chainCombinator";
-
+    return "noXpath";
+  if (/^(css|id|text)=/.test(text)) return "noLegacyEngine";
+  if (text.includes(">>")) return "noChainCombinator";
   return undefined;
 }
 
-/**
- * The static parts of a selector argument: a string literal whole, or each
- * quasi of a template literal. A `${}` cannot hide an engine prefix, and a
- * `>>` or `xpath=` in any static chunk is a hit.
- */
-function staticText(node: Rule.Node | { type: string }): string[] {
-  if (node.type === "Literal") {
-    const { value } = node as { value: unknown };
-    return typeof value === "string" ? [value] : [];
-  }
-  if (node.type === "TemplateLiteral") {
-    const { quasis } = node as {
-      quasis: { value: { cooked?: null | string; raw: string } }[];
-    };
-    return quasis.map((quasi) => quasi.value.cooked ?? quasi.value.raw);
-  }
+/** A template literal's static chunks still carry an engine prefix. */
+function staticStrings(argument: Expression | SpreadElement): string[] {
+  if (argument.type === "Literal")
+    return typeof argument.value === "string" ? [argument.value] : [];
+
+  if (argument.type === "TemplateLiteral")
+    return argument.quasis.map((quasi) => quasi.value.raw);
 
   return [];
 }

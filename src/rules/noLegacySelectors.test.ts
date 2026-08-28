@@ -1,94 +1,101 @@
-import { RuleTester } from "eslint";
-import { createRequire } from "node:module";
-
+import { pageObject, ruleTester } from "../testHelpers.js";
 import { noLegacySelectorsRule } from "./noLegacySelectors.js";
-import { pageObject } from "./testSupport.js";
-
-const require = createRequire(import.meta.url);
-
-const ruleTester = new RuleTester({
-  parser: require.resolve("@typescript-eslint/parser"),
-  parserOptions: { ecmaVersion: "latest", sourceType: "module" },
-});
-
-function locators(entries: string) {
-  return pageObject(
-    `private get locators() { return { ${entries} } as const; }`,
-  );
-}
 
 ruleTester.run("no-legacy-selectors", noLegacySelectorsRule.module, {
   invalid: [
     {
-      code: locators(`save: this.page.locator("//button[@id='save']")`),
-      errors: [{ messageId: "xpath" }],
+      ...pageObject(`async go() { this.page.locator("//div[@id='ok']"); }`),
+      errors: [{ messageId: "noXpath" }],
     },
     {
-      code: locators(`save: this.page.locator("xpath=//button")`),
-      errors: [{ messageId: "xpath" }],
+      ...pageObject(`async go() { this.page.locator("(//div)[1]"); }`),
+      errors: [{ messageId: "noXpath" }],
     },
     {
-      code: locators(`first: this.page.locator("(//li)[1]")`),
-      errors: [{ messageId: "xpath" }],
+      ...pageObject(`async go() { this.page.locator("xpath=//div"); }`),
+      errors: [{ messageId: "noXpath" }],
     },
     {
-      code: locators(`frame: this.page.frameLocator("//iframe")`),
-      errors: [{ messageId: "xpath" }],
+      ...pageObject(`async go() { this.page.locator("text=Sign in"); }`),
+      errors: [{ messageId: "noLegacyEngine" }],
     },
     {
-      code: locators(`
-        save: this.page.locator("text=Save"),
-        form: this.page.locator("css=.form"),
-        email: this.page.locator("id=email"),
-      `),
-      errors: [
-        { messageId: "legacyEngine" },
-        { messageId: "legacyEngine" },
-        { messageId: "legacyEngine" },
-      ],
+      ...pageObject(`async go() { this.page.locator("css=.button"); }`),
+      errors: [{ messageId: "noLegacyEngine" }],
     },
     {
-      code: locators(`save: this.page.locator(".form >> text=Save")`),
-      errors: [{ messageId: "chainCombinator" }],
+      ...pageObject(`async go() { this.page.locator("id=submit"); }`),
+      errors: [{ messageId: "noLegacyEngine" }],
     },
     {
-      // A template literal's static text is classified too.
-      code: locators(
-        "row: (name: string) => this.page.locator(`.row >> text=${name}`)",
+      ...pageObject(`async go() { this.page.locator("form >> button"); }`),
+      errors: [{ messageId: "noChainCombinator" }],
+    },
+    {
+      ...pageObject(`async go() { this.page.frameLocator("//iframe"); }`),
+      errors: [{ messageId: "noXpath" }],
+    },
+    {
+      // A static chunk of a template literal still carries the prefix.
+      ...pageObject(
+        "async go(name: string) { this.page.locator(`text=${name}`); }",
       ),
-      errors: [{ messageId: "chainCombinator" }],
+      errors: [{ messageId: "noLegacyEngine" }],
     },
     {
-      // Anywhere in the page object, not only in the map.
-      code: pageObject(
-        `async open() { await this.page.locator("//a").click(); }`,
-      ),
-      errors: [{ messageId: "xpath" }],
+      ...pageObject(`async go() { this.page.locator("  //div"); }`),
+      errors: [{ messageId: "noXpath" }],
+    },
+    {
+      code: `class SignInPage extends BasePageObject {
+        async go() { this.page.locator("//div"); }
+      }`,
+      errors: [{ messageId: "noXpath" }],
+      filename: "file:///src/pages/auth/sign-in-page.ts",
     },
   ],
   valid: [
     {
-      code: locators(`
-        save: this.page.getByRole("button", { name: "Save" }),
-        form: this.page.locator(".form"),
-        hint: this.page.locator(".form:has-text('Save')"),
-        link: this.page.locator("a[href='https://example.com/x']"),
-        chained: this.page.locator(".form").getByText("Save"),
-      `),
+      ...pageObject(`async go() { this.page.locator("#ok"); }`),
     },
     {
-      // Not a string the rule can read.
-      code: locators(`row: (selector: string) => this.page.locator(selector)`),
+      ...pageObject(`async go() { this.page.locator(".card > .button"); }`),
     },
     {
-      // Only `locator()` / `frameLocator()` arguments are classified.
-      code: locators(`text: this.page.getByText("//")`),
+      // Current Playwright pseudo-classes, not the legacy `text=` engine.
+      ...pageObject(`async go() { this.page.locator("li:text-is('Paris')"); }`),
     },
     {
-      // Not a page object.
-      code: `class Helper {
-        find(page: Page) { return page.locator("//div"); }
-      }`,
+      ...pageObject(`async go() { this.page.locator("div:has-text('ok')"); }`),
+    },
+    {
+      ...pageObject(
+        `async go() { this.page.getByText("text=not a selector"); }`,
+      ),
+    },
+    {
+      // An engine prefix only counts at the start. A CSS attribute selector
+      // contains `id=` and `text=` without being legacy syntax.
+      ...pageObject(`async go() { this.page.locator("[data-id=submit]"); }`),
+    },
+    {
+      ...pageObject(`async go() { this.page.locator("[aria-text=hello]"); }`),
+    },
+    {
+      // A fully dynamic selector has no static chunk to inspect.
+      ...pageObject("async go(sel: string) { this.page.locator(`${sel}`); }"),
+    },
+    {
+      ...pageObject(
+        `async go() { this.page.locator("form").locator("button"); }`,
+      ),
+    },
+    {
+      ...pageObject(`async go() { this.page.locator(); }`),
+    },
+    {
+      code: `class Flow { async go() { this.page.locator("//div"); } }`,
+      filename: "src/flows/checkout.flow.ts",
     },
   ],
 });

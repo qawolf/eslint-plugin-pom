@@ -1,27 +1,7 @@
-import { RuleTester } from "eslint";
-import { createRequire } from "node:module";
-
+import { pageObject, pagePath, ruleTester } from "../testHelpers.js";
 import { noInlineLocatorInPageObjectRule } from "./noInlineLocatorInPageObject.js";
 
-// RuleTester takes the parser as a resolved path, and this package is ESM.
-const require = createRequire(import.meta.url);
-
-const ruleTester = new RuleTester({
-  parser: require.resolve("@typescript-eslint/parser"),
-  parserOptions: { ecmaVersion: "latest", sourceType: "module" },
-});
-
 const inlineLocator = [{ messageId: "inlineLocator" }];
-
-const pagePath = "src/pages/sign-in-page.ts";
-
-/** A filename is required: RuleTester defaults to `<input>`, which is out of scope. */
-function pageObject(body: string, base = "BasePageObject") {
-  return {
-    code: `class SignInPage extends ${base} {\n${body}\n}`,
-    filename: pagePath,
-  };
-}
 
 ruleTester.run(
   "no-inline-locator-in-page-object",
@@ -103,7 +83,6 @@ ruleTester.run(
         errors: inlineLocator,
       },
       {
-        // Nested wrappers.
         ...pageObject(
           `async a() { await (this.page! as Page).getByRole("button").click(); }`,
         ),
@@ -256,7 +235,6 @@ ruleTester.run(
         `),
       },
       {
-        // Flows build locators inline by design.
         code: `class SignInPage extends BasePageObject {
           async signIn() { await this.page.getByRole("button").click(); }
         }`,

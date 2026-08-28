@@ -6,49 +6,118 @@ import type {
   PropertyDefinition,
 } from "estree";
 
-const pagesDirectoryPrefix = "src/pages/";
+import { pagesDirectoryFrom } from "../settings.js";
+
+const pageObjectExtensions = [".ts", ".mts", ".cts"];
 
 export type ClassNode = ClassDeclaration | ClassExpression;
 
 export type ClassMember = MethodDefinition | PropertyDefinition;
 
 /**
- * `accessibility`, `declare` and `readonly` come from the TypeScript parser;
- * estree does not model them.
+ * Hosts disagree on the path shape (`file:///src/pages/…` percent-encoded,
+ * absolute, relative), so the directory is matched as a path segment rather
+ * than a prefix. Not percent-decoded: `encodeURIComponent` leaves `.` and `/`
+ * alone, and decoding could throw on a stray `%` mid-lint.
  */
-export type TsClassMember = ClassMember & {
-  accessibility?: "private" | "protected" | "public";
-  declare?: boolean;
-  readonly?: boolean;
-};
+export function isPageObjectFile(
+  filename: string,
+  pagesDirectory: string,
+): boolean {
+  const path = filename.replaceAll("\\", "/");
+  if (!pageObjectExtensions.some((extension) => path.endsWith(extension)))
+    return false;
 
-/** `abstract` likewise. */
-export type TsClass = ClassNode & { abstract?: boolean };
+  return path.startsWith(pagesDirectory) || path.includes(`/${pagesDirectory}`);
+}
 
-/**
- * The other way to recognise a page object: by its superclass rather than its
- * path. Path scoping (`isPageObjectFile`) is the tighter fit for a directory
- * reserved for page objects; the superclass is what a rule uses when it must
- * work on a file anywhere in the workspace, and it is what the flow-side
- * rules pair with. Blind spot: a page object extending *another* page object
- * names no base class here, and following that chain would need type
- * information.
- */
-export const pageObjectBaseClasses = new Set([
+export function isPageObjectContext(context: Rule.RuleContext): boolean {
+  return isPageObjectFile(
+    context.filename,
+    pagesDirectoryFrom(context.settings),
+  );
+}
+
+/** `??=` keeps the innermost member, for a class nested inside a method. */
+export function enclosingClassMember(node: Rule.Node): Rule.Node | undefined {
+  let member: Rule.Node | undefined;
+  let current: Rule.Node | null = node.parent;
+
+  while (current) {
+    if (
+      current.type === "MethodDefinition" ||
+      current.type === "PropertyDefinition"
+    )
+      member ??= current;
+
+    current = current.parent;
+  }
+
+  return member;
+}
+
+const pageObjectBases = new Set([
   "BasePageObject",
   "EntryPointPageObject",
   "SubPageObject",
 ]);
 
-export function isPageObjectClass(node: ClassNode): boolean {
+const pageObjectSuffixes = ["Component", "Modal", "Page"];
+
+export function isPageObjectName(name: string): boolean {
+  return pageObjectSuffixes.some((suffix) => name.endsWith(suffix));
+}
+
+/** Extends one of the kit's base classes outright; no name-based guess. */
+function extendsPageObjectBase(node: ClassNode): boolean {
   const { superClass } = node;
   return (
-    superClass?.type === "Identifier" &&
-    pageObjectBaseClasses.has(superClass.name)
+    superClass?.type === "Identifier" && pageObjectBases.has(superClass.name)
   );
 }
 
 /**
+ * A class extending a page-object base, or named like one -- which covers a page
+ * object extending another page object, where no base class is named. Keeps a
+ * helper class that happens to sit under `src/pages/` out of scope.
+ */
+export function isPageObjectClass(node: Rule.Node | undefined): boolean {
+  if (!node) return false;
+  if (node.type !== "ClassDeclaration" && node.type !== "ClassExpression")
+    return false;
+
+  if (node.id && isPageObjectName(node.id.name)) return true;
+  if (extendsPageObjectBase(node)) return true;
+
+  const { superClass } = node;
+  return superClass?.type === "Identifier" && isPageObjectName(superClass.name);
+}
+
+export function enclosingClass(node: Rule.Node): Rule.Node | undefined {
+  let current: Rule.Node | null = node.parent;
+
+  while (current) {
+    if (
+      current.type === "ClassDeclaration" ||
+      current.type === "ClassExpression"
+    )
+      return current;
+
+    current = current.parent;
+  }
+
+  return undefined;
+}
+
+/**
+ * The other way to recognise a page object: by its superclass rather than its
+ * path. Path scoping (`isPageObjectContext`) is the tighter fit for a
+ * directory reserved for page objects; the superclass is what a rule uses when
+ * it must work on a file anywhere in the workspace, and it is what the
+ * flow-side rules pair with. Blind spot: a page object extending *another*
+ * page object names no base class here, and following that chain would need
+ * type information.
+ *
  * The nearest enclosing class, when it is a page object by superclass. A
  * class nested inside a page-object method is judged on its own superclass,
  * not the outer one.
@@ -63,7 +132,7 @@ export function enclosingPageObject(node: Rule.Node): ClassNode | undefined {
         declaration.type === "ClassDeclaration" ||
         declaration.type === "ClassExpression";
 
-      return isClass && isPageObjectClass(declaration)
+      return isClass && extendsPageObjectBase(declaration)
         ? declaration
         : undefined;
     }
@@ -88,49 +157,6 @@ export function memberName(member: ClassMember): string | undefined {
   return undefined;
 }
 
-/**
- * No host passes the workspace path verbatim: the editor lints
- * `file:///src/pages/home-page.ts` percent-encoded per segment, the agent
- * `/src/pages/home-page.ts`, a plain `eslint` run an absolute path, and
- * `RuleTester` defaults to `<input>`.
- *
- * Matching a path segment rather than a prefix covers all of them, the `file://`
- * scheme included, and is why an absolute path works -- anchoring at the start
- * would silently never fire under plain ESLint. The leading `/` is what keeps
- * `my-src/pages/` and `notsrc/pages/` out.
- *
- * Not percent-decoded: `encodeURIComponent` leaves letters, `.` and `/` alone,
- * so the directory and extension survive encoding, and decoding could throw on
- * a stray `%` mid-lint.
- */
-export function isPageObjectFile(filename: string): boolean {
-  const path = filename.replaceAll("\\", "/");
-  if (!path.endsWith(".ts")) return false;
-
-  return (
-    path.startsWith(pagesDirectoryPrefix) ||
-    path.includes(`/${pagesDirectoryPrefix}`)
-  );
-}
-
-/** `??=` keeps the innermost member, for a class nested inside a method. */
-export function enclosingClassMember(node: Rule.Node): Rule.Node | undefined {
-  let member: Rule.Node | undefined;
-  let current: Rule.Node | null = node.parent;
-
-  while (current) {
-    if (
-      current.type === "MethodDefinition" ||
-      current.type === "PropertyDefinition"
-    )
-      member ??= current;
-
-    current = current.parent;
-  }
-
-  return member;
-}
-
 /** `selectors` and `dynamicSelectors` are the mobile spellings. */
 export const locatorHolderNames = new Set([
   "dynamicLocators",
@@ -153,7 +179,6 @@ export function nodeType(node: object): string {
   return typeof type === "string" ? type : "";
 }
 
-/** Nodes that assert something about a type without changing the value. */
 const typeAssertionWrappers = new Set([
   "TSAsExpression",
   "TSNonNullExpression",
@@ -162,9 +187,8 @@ const typeAssertionWrappers = new Set([
 ]);
 
 /**
- * The expression inside an `as` / `satisfies` / `!` / `<T>` wrapper, or undefined
- * when this is not one. Returns `unknown` because none of those node types are in
- * ESTree's union, so a typed return would need a cast at every call site.
+ * Returns `unknown`: none of these node types are in ESTree's union, so a
+ * typed return would need a cast at every call site.
  */
 export function typeAssertionOperand(node: unknown): unknown {
   if (!isObject(node)) return undefined;
@@ -173,7 +197,6 @@ export function typeAssertionOperand(node: unknown): unknown {
   return "expression" in node ? node.expression : undefined;
 }
 
-/** The expression with every type-assertion wrapper peeled off. */
 function withoutTypeAssertions(node: unknown): unknown {
   let current = node;
 
@@ -188,10 +211,6 @@ function withoutTypeAssertions(node: unknown): unknown {
 }
 
 /**
- * True for `this.page`, including under any `!`, `as`, or `satisfies`. Those wrap
- * the expression in a node the rule would otherwise fail to match, so an inline
- * locator written `this.page!.getByRole(...)` would go unreported.
- *
  * `this.#page` and `this[page]` are not it: the first is a different, private
  * field that happens to be spelled `page`, and the second is a dynamic lookup
  * whose key is only known at runtime.

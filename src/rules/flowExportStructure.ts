@@ -52,7 +52,7 @@ export const flowExportStructureRule: PomLintRule = {
           ) {
             context.report({
               messageId: "notAFlowCall",
-              node: declaration as Rule.Node,
+              node: declaration,
             });
             return;
           }
@@ -60,7 +60,7 @@ export const flowExportStructureRule: PomLintRule = {
           if (declaration.arguments.length < 3) {
             context.report({
               messageId: "missingArguments",
-              node: declaration as Rule.Node,
+              node: declaration,
             });
             return;
           }
@@ -69,7 +69,7 @@ export const flowExportStructureRule: PomLintRule = {
           if (name && name.type !== "Literal") {
             context.report({
               messageId: "nameNotLiteral",
-              node: name as Rule.Node,
+              node: name,
             });
           }
         },

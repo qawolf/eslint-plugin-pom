@@ -1,15 +1,7 @@
-import { RuleTester } from "eslint";
-import { createRequire } from "node:module";
+import { ruleTester } from "../testHelpers.js";
 
 import { noRawPageInFlowsRule } from "./noRawPageInFlows.js";
 import { flow } from "./testSupport.js";
-
-const require = createRequire(import.meta.url);
-
-const ruleTester = new RuleTester({
-  parser: require.resolve("@typescript-eslint/parser"),
-  parserOptions: { ecmaVersion: "latest", sourceType: "module" },
-});
 
 /** Reported inside a flow; the valid list pins that it is not, outside one. */
 const flowBody = `const { page } = await launch(); await page.goto("/");`;

@@ -1,69 +1,69 @@
 import type { Rule } from "eslint";
 
-import type { ClassNode, TsClass } from "../pageObject/index.js";
+import { isPageObjectContext } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * A concrete entry point has the `static create()` factory a flow starts from.
- *
- * ```ts
- * // Reported
- * export class LoginPage extends EntryPointPageObject {
- *   async signIn() { ... }
- * }
- *
- * // Expected
- * export class LoginPage extends EntryPointPageObject {
- *   static async create(options?: InitializeBrowserOptions) {
- *     return new this(await this.initializeBrowser(options));
- *   }
- * }
- * ```
- *
- * `initializeBrowser` is `protected static`, so `create` is the one place a
- * flow can get a browser with the entry point's page hooks installed. An
- * `abstract` entry point is a shared base and is left to its subclasses.
- */
 export const entryPointFactoryRule: PomLintRule = {
   module: {
     create(context) {
-      function check(node: ClassNode & Rule.NodeParentExtension): void {
-        if (
-          node.superClass?.type !== "Identifier" ||
-          node.superClass.name !== "EntryPointPageObject"
-        )
-          return;
-        if ((node as TsClass).abstract) return;
+      if (!isPageObjectContext(context)) return {};
 
-        const hasCreate = node.body.body.some(
-          (member) =>
-            member.type === "MethodDefinition" &&
-            member.static &&
-            member.kind === "method" &&
-            !member.computed &&
-            member.key.type === "Identifier" &&
-            member.key.name === "create",
-        );
-        if (hasCreate) return;
+      return {
+        ClassBody(node) {
+          const declaration = node.parent;
+          if (!extendsEntryPoint(declaration)) return;
 
-        context.report({
-          data: { name: node.id?.name ?? "This entry point" },
-          messageId: "missingCreate",
-          node: node.id ?? node,
-        });
-      }
+          const hasCreate = node.body.some(
+            (member) =>
+              member.type === "MethodDefinition" &&
+              member.static &&
+              member.key.type === "Identifier" &&
+              member.key.name === "create",
+          );
+          if (hasCreate) return;
 
-      return { ClassDeclaration: check, ClassExpression: check };
+          context.report({
+            data: { name: className(declaration) },
+            messageId: "missingCreate",
+            node: declaration,
+          });
+        },
+      };
     },
     meta: {
+      docs: {
+        description:
+          "An entry point declares a `static create()`, so a flow has a way to open the page it starts on.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#entry-point-factory",
+      },
       messages: {
         missingCreate:
-          "`{{name}}` extends EntryPointPageObject but has no `static create()`. An entry point is where a flow starts, so it is the one page object a flow constructs: `static async create(options?: InitializeBrowserOptions) { return new this(await this.initializeBrowser(options)); }` launches the browser with this entry point's page hooks installed.",
+          "`{{name}}` extends `EntryPointPageObject` but has no `static create()`, so a flow has no way to open this page -- the constructor is protected, and `create` is what launches the browser and installs the page hooks. Add `static async create(options?: { instantiatedPage?: Page; url?: string })`, copying the shape from another entry point under `src/pages/`.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 
   name: "entry-point-factory",
 
-  severity: "error",
+  severity: "warn",
 };
+
+function extendsEntryPoint(node: Rule.Node): boolean {
+  if (node.type !== "ClassDeclaration" && node.type !== "ClassExpression")
+    return false;
+
+  const { superClass } = node;
+  return (
+    superClass?.type === "Identifier" &&
+    superClass.name === "EntryPointPageObject"
+  );
+}
+
+function className(node: Rule.Node): string {
+  if (node.type !== "ClassDeclaration" && node.type !== "ClassExpression")
+    return "This class";
+
+  return node.id?.name ?? "This class";
+}

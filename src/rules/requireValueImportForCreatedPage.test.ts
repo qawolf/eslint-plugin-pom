@@ -1,17 +1,9 @@
-import { RuleTester } from "eslint";
-import { createRequire } from "node:module";
+import { ruleTester } from "../testHelpers.js";
 
 import { requireValueImportForCreatedPageRule } from "./requireValueImportForCreatedPage.js";
 
 // RuleTester takes the parser as a resolved path, and this package is ESM.
 // A Node built-in is fine here: only the rules are constrained, not the tests.
-const require = createRequire(import.meta.url);
-
-const ruleTester = new RuleTester({
-  parser: require.resolve("@typescript-eslint/parser"),
-  parserOptions: { ecmaVersion: "latest", sourceType: "module" },
-});
-
 const typeOnlyImport = [{ messageId: "typeOnlyImport" }];
 
 function pageObject(body: string) {
