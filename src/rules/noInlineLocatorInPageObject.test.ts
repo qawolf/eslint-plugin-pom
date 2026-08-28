@@ -1,27 +1,7 @@
-import tsParser from "@typescript-eslint/parser";
-import { RuleTester } from "eslint";
-
+import { pageObject, pagePath, ruleTester } from "../testHelpers.js";
 import { noInlineLocatorInPageObjectRule } from "./noInlineLocatorInPageObject.js";
 
-const ruleTester = new RuleTester({
-  languageOptions: {
-    ecmaVersion: "latest",
-    parser: tsParser,
-    sourceType: "module",
-  },
-});
-
 const inlineLocator = [{ messageId: "inlineLocator" }];
-
-const pagePath = "src/pages/sign-in-page.ts";
-
-/** A filename is required: RuleTester defaults to `<input>`, which is out of scope. */
-function pageObject(body: string, base = "BasePageObject") {
-  return {
-    code: `class SignInPage extends ${base} {\n${body}\n}`,
-    filename: pagePath,
-  };
-}
 
 ruleTester.run(
   "no-inline-locator-in-page-object",
