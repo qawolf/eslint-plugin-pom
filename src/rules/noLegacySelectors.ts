@@ -5,20 +5,6 @@ import type { PomLintRule } from "../types.js";
 
 const selectorMethods = new Set(["frameLocator", "locator"]);
 
-/**
- * Bans XPath and the deprecated Playwright selector engines.
- *
- * ```ts
- * // Reported
- * this.page.locator("//div[@id='ok']");
- * this.page.locator("text=Sign in");
- * this.page.locator("form >> button");
- *
- * // Expected
- * this.page.getByRole("button", { name: "Sign in" });
- * this.page.locator("form").locator("button");
- * ```
- */
 export const noLegacySelectorsRule: PomLintRule = {
   module: {
     create(context) {

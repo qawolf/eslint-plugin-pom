@@ -5,18 +5,6 @@ import {
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * `BasePageObject`'s constructor is `protected`, so a page object that
- * redeclares one without saying `protected` widens it to public.
- *
- * ```ts
- * // Reported
- * constructor(page: Page) { super(page); }
- *
- * // Expected -- drop it, or keep the base's visibility
- * protected constructor(page: Page) { super(page); }
- * ```
- */
 export const noPublicConstructorRule: PomLintRule = {
   module: {
     create(context) {

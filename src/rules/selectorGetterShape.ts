@@ -9,21 +9,6 @@ import {
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * The locator holder is a private getter returning `as const`.
- *
- * ```ts
- * // Reported
- * get locators() {
- *   return { signInButton: this.page.getByRole("button") };
- * }
- *
- * // Expected
- * private get locators() {
- *   return { signInButton: this.page.getByRole("button") } as const;
- * }
- * ```
- */
 export const selectorGetterShapeRule: PomLintRule = {
   module: {
     create(context) {
@@ -110,10 +95,6 @@ function returnedExpression(node: Rule.Node): Expression | undefined {
   return undefined;
 }
 
-/**
- * Walks the whole wrapper chain rather than only the outermost node, so
- * `({ … } as const) satisfies Locators` still counts.
- */
 function isAsConst(returned: Expression): boolean {
   let current: unknown = returned;
 

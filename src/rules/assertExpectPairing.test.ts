@@ -127,7 +127,6 @@ ruleTester.run("assert-expect-pairing", assertExpectPairingRule.module, {
       filename: pagePath,
     },
     {
-      // Outside `src/pages/`. Flows assert freely.
       code: `class Flow { async run() { expect(1).toBe(1); } }`,
       filename: "src/flows/checkout.flow.ts",
     },

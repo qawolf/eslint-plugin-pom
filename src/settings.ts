@@ -1,20 +1,9 @@
 import type { Rule } from "eslint";
 
-/**
- * The name a config registers this plugin under. Deliberately not `@qawolf/pom`
- * -- that is a different, published package, and sharing the name would make a
- * rule id look like it ships from there.
- */
 export const rulePrefix = "@qawolf/pom-lint";
 
 const defaultPagesDirectory = "src/pages/";
 
-/**
- * Where this workspace keeps its page objects, from
- * `settings["@qawolf/pom-lint"].pagesDirectory`. Shared rather than a per-rule
- * option because every rule gates on the same directory, and a workspace that
- * moved its page objects moved them for all of them.
- */
 export function pagesDirectoryFrom(
   settings: Rule.RuleContext["settings"],
 ): string {

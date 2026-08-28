@@ -8,17 +8,6 @@ import {
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * Page objects describe a page; they do not remember things about it.
- *
- * ```ts
- * // Reported
- * private lastSearchTerm = "";
- *
- * // Expected -- hand it back instead
- * async search(term: string): Promise<string> { ...; return term; }
- * ```
- */
 export const noMutableStateInPomRule: PomLintRule = {
   module: {
     create(context) {

@@ -15,19 +15,6 @@ const untypedReturns = new Set([
   "void",
 ]);
 
-/**
- * A method handing back another page object says which one.
- *
- * ```ts
- * // Reported
- * async goToDashboard() { return this.create("DashboardPage"); }
- *
- * // Expected
- * async goToDashboard(): Promise<DashboardPage> {
- *   return this.create("DashboardPage");
- * }
- * ```
- */
 export const typedCreateReturnRule: PomLintRule = {
   module: {
     create(context) {
@@ -121,7 +108,6 @@ function isAsyncMethod(method: Rule.Node): boolean {
   return method.type === "MethodDefinition" && method.value.async === true;
 }
 
-/** Undefined when the method has no annotation at all. */
 function returnTypeText(
   context: Rule.RuleContext,
   method: Rule.Node,

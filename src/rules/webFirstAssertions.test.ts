@@ -117,7 +117,6 @@ ruleTester.run("web-first-assertions", webFirstAssertionsRule.module, {
       `),
     },
     {
-      // Outside `src/pages/`.
       code: `class Flow {
         async go() { expect(await this.locators.banner.isVisible()).toBe(true); }
       }`,

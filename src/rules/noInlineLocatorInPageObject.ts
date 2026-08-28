@@ -8,21 +8,6 @@ import {
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * Page objects keep every locator in a named getter.
- *
- * ```ts
- * // Reported
- * async signIn() {
- *   await this.page.getByRole("button", { name: "Sign in" }).click();
- * }
- *
- * // Expected
- * private get locators() {
- *   return { signInButton: this.page.getByRole("button") } as const;
- * }
- * ```
- */
 export const noInlineLocatorInPageObjectRule: PomLintRule = {
   module: {
     create(context) {

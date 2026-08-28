@@ -30,26 +30,16 @@ const allRules: PomLintRule[] = [
   webFirstAssertionsRule,
 ];
 
-/** ESLint's plugin contract: unprefixed names, since the config supplies the prefix. */
 export const rules = Object.fromEntries(
   allRules.map((rule) => [rule.name, rule.module]),
 );
 
-/**
- * Severities keyed by the id `rules` registered under a `plugins` block, so a
- * consumer can spread this straight into `rules` rather than restating a
- * severity per rule.
- */
 export const ruleSeverities = Object.fromEntries(
   allRules.map((rule) => [`${rulePrefix}/${rule.name}`, rule.severity]),
 );
 
 const plugin = { meta: { name: "@qawolf/eslint-plugin-pom" }, rules };
 
-/**
- * A ready-made flat config, so the common case is one spread rather than a
- * `plugins` block the consumer has to keep in step with `ruleSeverities`.
- */
 export const configs = {
   recommended: {
     files: ["**/*.ts", "**/*.mts", "**/*.cts"],

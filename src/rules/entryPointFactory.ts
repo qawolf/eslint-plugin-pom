@@ -3,16 +3,6 @@ import type { Rule } from "eslint";
 import { isPageObjectContext } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * An entry point is where a flow starts, so it needs the factory that opens it.
- *
- * ```ts
- * // Expected
- * export class SignInPage extends EntryPointPageObject {
- *   static async create(options: CreateOptions = {}): Promise<SignInPage> { ... }
- * }
- * ```
- */
 export const entryPointFactoryRule: PomLintRule = {
   module: {
     create(context) {

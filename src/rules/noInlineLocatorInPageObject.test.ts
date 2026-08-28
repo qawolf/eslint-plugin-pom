@@ -83,7 +83,6 @@ ruleTester.run(
         errors: inlineLocator,
       },
       {
-        // Nested wrappers.
         ...pageObject(
           `async a() { await (this.page! as Page).getByRole("button").click(); }`,
         ),
@@ -236,7 +235,6 @@ ruleTester.run(
         `),
       },
       {
-        // Flows build locators inline by design.
         code: `class SignInPage extends BasePageObject {
           async signIn() { await this.page.getByRole("button").click(); }
         }`,
