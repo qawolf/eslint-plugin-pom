@@ -31,9 +31,9 @@ export const selectorGetterShapeRule: PomLintRule = {
 
       return {
         MethodDefinition(node) {
-          if (!isHolderKey(node)) return;
-
           const name = holderName(node);
+          if (!name) return;
+
           if (node.kind !== "get") {
             context.report({ data: { name }, messageId: "mustBeGetter", node });
             return;
@@ -56,13 +56,10 @@ export const selectorGetterShapeRule: PomLintRule = {
         },
 
         PropertyDefinition(node) {
-          if (!isHolderKey(node)) return;
+          const name = holderName(node);
+          if (!name) return;
 
-          context.report({
-            data: { name: holderName(node) },
-            messageId: "useGetter",
-            node,
-          });
+          context.report({ data: { name }, messageId: "useGetter", node });
         },
       };
     },
@@ -92,21 +89,12 @@ export const selectorGetterShapeRule: PomLintRule = {
   severity: "warn",
 };
 
-function isHolderKey(node: Rule.Node): boolean {
+function holderName(node: Rule.Node): string | undefined {
   if (node.type !== "MethodDefinition" && node.type !== "PropertyDefinition")
-    return false;
+    return undefined;
+  if (node.key.type !== "Identifier") return undefined;
 
-  return node.key.type === "Identifier" && isLocatorHolderName(node.key.name);
-}
-
-function holderName(node: Rule.Node): string {
-  if (
-    (node.type === "MethodDefinition" || node.type === "PropertyDefinition") &&
-    node.key.type === "Identifier"
-  )
-    return node.key.name;
-
-  return "locators";
+  return isLocatorHolderName(node.key.name) ? node.key.name : undefined;
 }
 
 function returnedExpression(node: Rule.Node): Expression | undefined {
