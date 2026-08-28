@@ -1,6 +1,6 @@
+import tsParser from "@typescript-eslint/parser";
 import type { Rule } from "eslint";
 import { RuleTester } from "eslint";
-import { createRequire } from "node:module";
 
 import {
   enclosingClassMember,
@@ -8,12 +8,12 @@ import {
   isPageObjectFile,
 } from "./index.js";
 
-// RuleTester takes the parser as a resolved path, and this package is ESM.
-const require = createRequire(import.meta.url);
-
 const ruleTester = new RuleTester({
-  parser: require.resolve("@typescript-eslint/parser"),
-  parserOptions: { ecmaVersion: "latest", sourceType: "module" },
+  languageOptions: {
+    ecmaVersion: "latest",
+    parser: tsParser,
+    sourceType: "module",
+  },
 });
 
 describe("isPageObjectFile", () => {
@@ -27,12 +27,14 @@ describe("isPageObjectFile", () => {
     ["/Users/qae/workspace/src/pages/home-page.ts", "plain eslint, absolute"],
     ["/home/runner/work/repo/src/pages/auth/sign-in-page.ts", "CI, absolute"],
     ["C:\\Users\\qae\\workspace\\src\\pages\\home-page.ts", "Windows"],
+    ["src/pages/home-page.mts", "ESM extension"],
+    ["src/pages/home-page.cts", "CommonJS extension"],
     [
       "file:///C:/Users/qae/workspace/src/pages/home-page.ts",
       "Windows file URI",
     ],
   ])("accepts %s (%s)", (filename) => {
-    expect(isPageObjectFile(filename)).toBe(true);
+    expect(isPageObjectFile(filename, "src/pages/")).toBe(true);
   });
 
   it.each([
@@ -44,10 +46,18 @@ describe("isPageObjectFile", () => {
     ["/Users/qae/notsrc/pages/home-page.ts", "absolute, name ends in src"],
     ["/Users/qae/src/pagesx/home-page.ts", "absolute, name starts with pages"],
     ["src/pages/home-page.js", "not TypeScript"],
+    ["src/pages/home-page.tsx", "JSX, not a page object"],
     ["file:///src/pages/README.md", "not TypeScript"],
     ["<input>", "RuleTester default, so a case without a filename fails"],
   ])("rejects %s (%s)", (filename) => {
-    expect(isPageObjectFile(filename)).toBe(false);
+    expect(isPageObjectFile(filename, "src/pages/")).toBe(false);
+  });
+
+  it("matches a workspace that keeps page objects somewhere else", () => {
+    expect(isPageObjectFile("e2e/pages/home-page.ts", "e2e/pages/")).toBe(true);
+    expect(isPageObjectFile("src/pages/home-page.ts", "e2e/pages/")).toBe(
+      false,
+    );
   });
 });
 

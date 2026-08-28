@@ -1,6 +1,6 @@
 import type { Rule } from "eslint";
 
-import { isPageObjectFile } from "../pageObject/index.js";
+import { isPageObjectContext } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
 /**
@@ -16,7 +16,7 @@ import type { PomLintRule } from "../types.js";
 export const entryPointFactoryRule: PomLintRule = {
   module: {
     create(context) {
-      if (!isPageObjectFile(context.filename)) return {};
+      if (!isPageObjectContext(context)) return {};
 
       return {
         ClassBody(node) {
@@ -41,10 +41,17 @@ export const entryPointFactoryRule: PomLintRule = {
       };
     },
     meta: {
+      docs: {
+        description:
+          "An entry point declares a `static create()`, so a flow has a way to open the page it starts on.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#entry-point-factory",
+      },
       messages: {
         missingCreate:
           "`{{name}}` extends `EntryPointPageObject` but has no `static create()`, so a flow has no way to open this page -- the constructor is protected, and `create` is what launches the browser and installs the page hooks. Add `static async create(options?: { instantiatedPage?: Page; url?: string })`, copying the shape from another entry point under `src/pages/`.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 

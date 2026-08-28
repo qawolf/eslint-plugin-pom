@@ -1,14 +1,14 @@
+import tsParser from "@typescript-eslint/parser";
 import { RuleTester } from "eslint";
-import { createRequire } from "node:module";
 
 import { noPublicConstructorRule } from "./noPublicConstructor.js";
 
-// RuleTester takes the parser as a resolved path, and this package is ESM.
-const require = createRequire(import.meta.url);
-
 const ruleTester = new RuleTester({
-  parser: require.resolve("@typescript-eslint/parser"),
-  parserOptions: { ecmaVersion: "latest", sourceType: "module" },
+  languageOptions: {
+    ecmaVersion: "latest",
+    parser: tsParser,
+    sourceType: "module",
+  },
 });
 
 const pagePath = "src/pages/sign-in-page.ts";

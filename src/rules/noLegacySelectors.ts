@@ -1,6 +1,6 @@
 import type { Expression, SpreadElement } from "estree";
 
-import { isPageObjectFile } from "../pageObject/index.js";
+import { isPageObjectContext } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
 const selectorMethods = new Set(["frameLocator", "locator"]);
@@ -22,7 +22,7 @@ const selectorMethods = new Set(["frameLocator", "locator"]);
 export const noLegacySelectorsRule: PomLintRule = {
   module: {
     create(context) {
-      if (!isPageObjectFile(context.filename)) return {};
+      if (!isPageObjectContext(context)) return {};
 
       return {
         CallExpression(node) {
@@ -48,6 +48,11 @@ export const noLegacySelectorsRule: PomLintRule = {
       };
     },
     meta: {
+      docs: {
+        description:
+          "Use `getBy*` or plain CSS instead of XPath and the deprecated Playwright selector engines, which break when the markup moves.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#no-legacy-selectors",
+      },
       messages: {
         noChainCombinator:
           '`{{text}}` uses `>>`, old Playwright syntax for two selectors in one string. Chain them instead: `.locator("form").locator("button")`. Only rewrite it when the new form finds the same element -- satisfying this rule is not a reason to change what the test acts on.',
@@ -56,6 +61,8 @@ export const noLegacySelectorsRule: PomLintRule = {
         noXpath:
           "`{{text}}` is XPath, which describes a path through the markup: it breaks as soon as anything is wrapped or moved, and it cannot see into a shadow DOM. Use `getByRole`, `getByText`, or a CSS selector on something stable like a test id. Only rewrite it when the new form finds the same element.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 

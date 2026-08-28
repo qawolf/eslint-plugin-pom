@@ -4,7 +4,7 @@ import {
   enclosingClass,
   isLocatorHolderName,
   isPageObjectClass,
-  isPageObjectFile,
+  isPageObjectContext,
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
@@ -22,7 +22,7 @@ import type { PomLintRule } from "../types.js";
 export const noMutableStateInPomRule: PomLintRule = {
   module: {
     create(context) {
-      if (!isPageObjectFile(context.filename)) return {};
+      if (!isPageObjectContext(context)) return {};
 
       return {
         PropertyDefinition(node) {
@@ -43,10 +43,17 @@ export const noMutableStateInPomRule: PomLintRule = {
       };
     },
     meta: {
+      docs: {
+        description:
+          "Return values from methods instead of storing them on the page object, since every `this.create(...)` builds a fresh instance.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#no-mutable-state-in-pom",
+      },
       messages: {
         mutableField:
           "`{{name}}` is state kept on the page object, and it does not survive: every `this.create(...)` builds a fresh instance, so what one method writes here is gone the next time this page object is reached for. Return the value from the method that produces it, or pass it in where it is needed. If it never changes after construction, `readonly` is enough.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 

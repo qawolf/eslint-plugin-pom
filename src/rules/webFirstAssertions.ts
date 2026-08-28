@@ -1,4 +1,4 @@
-import { isPageObjectFile } from "../pageObject/index.js";
+import { isPageObjectContext } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
 /**
@@ -32,7 +32,7 @@ const webFirstEquivalents = new Map([
 export const webFirstAssertionsRule: PomLintRule = {
   module: {
     create(context) {
-      if (!isPageObjectFile(context.filename)) return {};
+      if (!isPageObjectContext(context)) return {};
 
       return {
         CallExpression(node) {
@@ -60,10 +60,17 @@ export const webFirstAssertionsRule: PomLintRule = {
       };
     },
     meta: {
+      docs: {
+        description:
+          "Assert on the locator rather than on a value already read out of it, so Playwright retries until the assertion holds.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#web-first-assertions",
+      },
       messages: {
         preferWebFirst:
           "`await locator.{{read}}()` runs before `expect` sees it, so `expect` only gets a plain value: it checks once, at that instant, and fails if the element has not reached that state yet. Pass the locator instead -- `await expect(locator).{{suggestion}}`, or `.not.{{suggestion}}` if this assertion is a negative one -- and it re-checks until it holds or the timeout expires.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 

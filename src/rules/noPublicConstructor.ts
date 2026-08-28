@@ -1,7 +1,7 @@
 import {
   enclosingClass,
   isPageObjectClass,
-  isPageObjectFile,
+  isPageObjectContext,
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
@@ -20,7 +20,7 @@ import type { PomLintRule } from "../types.js";
 export const noPublicConstructorRule: PomLintRule = {
   module: {
     create(context) {
-      if (!isPageObjectFile(context.filename)) return {};
+      if (!isPageObjectContext(context)) return {};
 
       return {
         MethodDefinition(node) {
@@ -39,10 +39,17 @@ export const noPublicConstructorRule: PomLintRule = {
       };
     },
     meta: {
+      docs: {
+        description:
+          "Keep a redeclared constructor `protected`, so the registry stays the only way to build a page object.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#no-public-constructor",
+      },
       messages: {
         publicConstructor:
           "This constructor is public, but the one it overrides on `BasePageObject` is `protected`, so this lets any code call `new` and skip the registry. If the body only calls `super(page)`, delete the constructor -- it is inherited either way. Otherwise put `protected` in front of it.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 

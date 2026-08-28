@@ -1,6 +1,9 @@
 import type { Rule } from "eslint";
 
-import { enclosingClassMember, isPageObjectFile } from "../pageObject/index.js";
+import {
+  enclosingClassMember,
+  isPageObjectContext,
+} from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
 /**
@@ -21,7 +24,7 @@ import type { PomLintRule } from "../types.js";
 export const assertExpectPairingRule: PomLintRule = {
   module: {
     create(context) {
-      if (!isPageObjectFile(context.filename)) return {};
+      if (!isPageObjectContext(context)) return {};
 
       return {
         CallExpression(node) {
@@ -56,12 +59,19 @@ export const assertExpectPairingRule: PomLintRule = {
       };
     },
     meta: {
+      docs: {
+        description:
+          "Keep assertions in `assert*` methods, so a flow can perform an action without also running its checks.",
+        url: "https://github.com/qawolf/eslint-plugin-pom#assert-expect-pairing",
+      },
       messages: {
         expectOutsideAssert:
           "`{{name}}` acts and asserts. Move the `expect` calls into a new `{{suggestion}}` method and call that from the flow. An assertion method holds no actions, and its name starts with `assert`.",
         expectPrefixedName:
           "The `{{name}}` method only asserts, so its name should start with `assert`: rename it to `{{suggestion}}`.",
       },
+      schema: [],
+      type: "suggestion",
     },
   },
 
