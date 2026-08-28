@@ -1,4 +1,5 @@
 import { assertExpectPairingRule } from "./rules/assertExpectPairing.js";
+import { noDirectPomConstructionRule } from "./rules/noDirectPomConstruction.js";
 import { noInlineLocatorInPageObjectRule } from "./rules/noInlineLocatorInPageObject.js";
 import { selectorGetterShapeRule } from "./rules/selectorGetterShape.js";
 import { typedCreateReturnRule } from "./rules/typedCreateReturn.js";
@@ -14,6 +15,7 @@ export const rulePrefix = "@qawolf/pom-lint";
 
 const allRules: PomLintRule[] = [
   assertExpectPairingRule,
+  noDirectPomConstructionRule,
   noInlineLocatorInPageObjectRule,
   selectorGetterShapeRule,
   typedCreateReturnRule,
