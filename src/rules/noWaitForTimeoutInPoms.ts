@@ -4,14 +4,8 @@ import { isPageObjectFile } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
 const bannedWaits = new Map([
-  [
-    "waitForTimeout",
-    "a fixed sleep passes on a fast machine and fails on a slow one",
-  ],
-  [
-    "waitForSelector",
-    "it returns before the element is stable, and it takes a selector string rather than a locator",
-  ],
+  ["waitForSelector", "selectorWait"],
+  ["waitForTimeout", "fixedSleep"],
 ]);
 
 /**
@@ -36,23 +30,21 @@ export const noWaitForTimeoutInPomsRule: PomLintRule = {
           if (node.callee.property.type !== "Identifier") return;
 
           const method = node.callee.property.name;
-          const reason = bannedWaits.get(method);
-          if (!reason) return;
+          const messageId = bannedWaits.get(method);
+          if (!messageId) return;
           if (method === "waitForTimeout" && hasJustification(context, node))
             return;
 
-          context.report({
-            data: { method, reason },
-            messageId: "bannedWait",
-            node,
-          });
+          context.report({ messageId, node });
         },
       };
     },
     meta: {
       messages: {
-        bannedWait:
-          "`{{method}}()` waits for the wrong thing -- {{reason}}. Wait on the condition instead: `await this.locators.someElement.waitFor()` for an element, `await this.page.waitForURL(pattern)` after a navigation, or `await expect(...)` for a state. If nothing observable covers it, keep the sleep and say on the line above what it is waiting on.",
+        fixedSleep:
+          "`waitForTimeout()` waits for a duration, and a fixed sleep passes on a fast machine and fails on a slow one. Wait on the condition instead: `await this.locators.someElement.waitFor()` for an element, `await this.page.waitForURL(pattern)` after a navigation, or `await expect(...)` for a state. If nothing observable covers it, keep the `waitForTimeout()` call and put a comment saying what it is waiting for, on the same line or the line above.",
+        selectorWait:
+          "`waitForSelector()` returns before the element is stable, and it takes a selector string rather than a locator. Wait on the locator instead -- `await this.locators.someElement.waitFor()`, or `await expect(this.locators.someElement).toBeVisible()` for a state. A comment does not excuse this one the way it excuses `waitForTimeout()`: there is already a locator to wait on.",
       },
     },
   },

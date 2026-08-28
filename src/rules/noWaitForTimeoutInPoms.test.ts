@@ -21,7 +21,8 @@ function pageObject(body: string) {
   };
 }
 
-const bannedWait = [{ messageId: "bannedWait" }];
+const fixedSleep = [{ messageId: "fixedSleep" }];
+const selectorWait = [{ messageId: "selectorWait" }];
 
 ruleTester.run(
   "no-wait-for-timeout-in-poms",
@@ -36,25 +37,25 @@ ruleTester.run(
             await this.page.waitForSelector("#ok");
           }
         `),
-        errors: bannedWait,
+        errors: selectorWait,
       },
       {
         ...pageObject(
           `async settle() { await this.page.waitForTimeout(2000); }`,
         ),
-        errors: bannedWait,
+        errors: fixedSleep,
       },
       {
         ...pageObject(
           `async settle() { await this.page.waitForSelector("#ok"); }`,
         ),
-        errors: bannedWait,
+        errors: selectorWait,
       },
       {
         ...pageObject(
           `async settle() { await this.locators.row.waitForTimeout(50); }`,
         ),
-        errors: bannedWait,
+        errors: fixedSleep,
       },
       {
         ...pageObject(`
@@ -63,13 +64,13 @@ ruleTester.run(
             await this.page.waitForSelector("#ok");
           }
         `),
-        errors: [{ messageId: "bannedWait" }, { messageId: "bannedWait" }],
+        errors: [{ messageId: "fixedSleep" }, { messageId: "selectorWait" }],
       },
       {
         code: `class SignInPage extends BasePageObject {
           async settle() { await this.page.waitForTimeout(2000); }
         }`,
-        errors: bannedWait,
+        errors: fixedSleep,
         filename: "file:///src/pages/auth/sign-in-page.ts",
       },
     ],
