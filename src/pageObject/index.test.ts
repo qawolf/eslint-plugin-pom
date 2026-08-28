@@ -1,20 +1,11 @@
-import tsParser from "@typescript-eslint/parser";
 import type { Rule } from "eslint";
-import { RuleTester } from "eslint";
 
+import { ruleTester } from "../testHelpers.js";
 import {
   enclosingClassMember,
   isLocatorHolder,
   isPageObjectFile,
 } from "./index.js";
-
-const ruleTester = new RuleTester({
-  languageOptions: {
-    ecmaVersion: "latest",
-    parser: tsParser,
-    sourceType: "module",
-  },
-});
 
 describe("isPageObjectFile", () => {
   it.each([

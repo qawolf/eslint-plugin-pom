@@ -13,19 +13,6 @@ const baseClasses = new Set([
   "SubPageObject",
 ]);
 
-/**
- * A class driving a page is a page object, and says so.
- *
- * ```ts
- * // Reported
- * export class SignInPage {
- *   async signIn() { await this.page.getByRole("button").click(); }
- * }
- *
- * // Expected
- * export class SignInPage extends BasePageObject { ... }
- * ```
- */
 export const correctBaseClassRule: PomLintRule = {
   module: {
     create(context) {
@@ -89,7 +76,6 @@ export const correctBaseClassRule: PomLintRule = {
   severity: "warn",
 };
 
-/** True when any member of this class body reads `this.page`. */
 function usesPage(node: Rule.Node): boolean {
   if (node.type !== "ClassBody") return false;
 

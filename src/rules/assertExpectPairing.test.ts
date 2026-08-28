@@ -1,25 +1,5 @@
-import tsParser from "@typescript-eslint/parser";
-import { RuleTester } from "eslint";
-
+import { pageObject, pagePath, ruleTester } from "../testHelpers.js";
 import { assertExpectPairingRule } from "./assertExpectPairing.js";
-
-const ruleTester = new RuleTester({
-  languageOptions: {
-    ecmaVersion: "latest",
-    parser: tsParser,
-    sourceType: "module",
-  },
-});
-
-const pagePath = "src/pages/sign-in-page.ts";
-
-/** A filename is required: RuleTester defaults to `<input>`, which is out of scope. */
-function pageObject(body: string) {
-  return {
-    code: `class SignInPage extends BasePageObject {\n${body}\n}`,
-    filename: pagePath,
-  };
-}
 
 const expectOutsideAssert = [{ messageId: "expectOutsideAssert" }];
 const expectPrefixedName = [{ messageId: "expectPrefixedName" }];
@@ -147,7 +127,6 @@ ruleTester.run("assert-expect-pairing", assertExpectPairingRule.module, {
       filename: pagePath,
     },
     {
-      // Outside `src/pages/`. Flows assert freely.
       code: `class Flow { async run() { expect(1).toBe(1); } }`,
       filename: "src/flows/checkout.flow.ts",
     },

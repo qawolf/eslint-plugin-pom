@@ -6,21 +6,6 @@ import {
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * Only `assert*` methods hold assertions.
- *
- * ```ts
- * // Reported
- * async signIn() {
- *   await this.locators.signInButton.click();
- *   await expect(this.locators.banner).toBeVisible();
- * }
- *
- * // Expected
- * async signIn() { await this.locators.signInButton.click(); }
- * async assertSignedIn() { await expect(this.locators.banner).toBeVisible(); }
- * ```
- */
 export const assertExpectPairingRule: PomLintRule = {
   module: {
     create(context) {

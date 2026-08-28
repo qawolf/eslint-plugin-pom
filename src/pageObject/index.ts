@@ -5,19 +5,10 @@ import { pagesDirectoryFrom } from "../settings.js";
 const pageObjectExtensions = [".ts", ".mts", ".cts"];
 
 /**
- * No host passes the workspace path verbatim: the editor lints
- * `file:///src/pages/home-page.ts` percent-encoded per segment, the agent
- * `/src/pages/home-page.ts`, a plain `eslint` run an absolute path, and
- * `RuleTester` defaults to `<input>`.
- *
- * Matching a path segment rather than a prefix covers all of them, the `file://`
- * scheme included, and is why an absolute path works -- anchoring at the start
- * would silently never fire under plain ESLint. The leading `/` is what keeps
- * `my-src/pages/` and `notsrc/pages/` out.
- *
- * Not percent-decoded: `encodeURIComponent` leaves letters, `.` and `/` alone,
- * so the directory and extension survive encoding, and decoding could throw on
- * a stray `%` mid-lint.
+ * Hosts disagree on the path shape (`file:///src/pages/…` percent-encoded,
+ * absolute, relative), so the directory is matched as a path segment rather
+ * than a prefix. Not percent-decoded: `encodeURIComponent` leaves `.` and `/`
+ * alone, and decoding could throw on a stray `%` mid-lint.
  */
 export function isPageObjectFile(
   filename: string,
@@ -30,7 +21,6 @@ export function isPageObjectFile(
   return path.startsWith(pagesDirectory) || path.includes(`/${pagesDirectory}`);
 }
 
-/** The gate every rule opens with, so the settings lookup lives in one place. */
 export function isPageObjectContext(context: Rule.RuleContext): boolean {
   return isPageObjectFile(
     context.filename,
@@ -64,7 +54,6 @@ const pageObjectBases = new Set([
 
 const pageObjectSuffixes = ["Component", "Modal", "Page"];
 
-/** Page objects are named for what they are: a `Page`, `Component` or `Modal`. */
 export function isPageObjectName(name: string): boolean {
   return pageObjectSuffixes.some((suffix) => name.endsWith(suffix));
 }
@@ -89,7 +78,6 @@ export function isPageObjectClass(node: Rule.Node | undefined): boolean {
   );
 }
 
-/** The class this node sits in, innermost first. */
 export function enclosingClass(node: Rule.Node): Rule.Node | undefined {
   let current: Rule.Node | null = node.parent;
 
@@ -128,7 +116,6 @@ export function nodeType(node: object): string {
   return typeof type === "string" ? type : "";
 }
 
-/** Nodes that assert something about a type without changing the value. */
 const typeAssertionWrappers = new Set([
   "TSAsExpression",
   "TSNonNullExpression",
@@ -137,9 +124,8 @@ const typeAssertionWrappers = new Set([
 ]);
 
 /**
- * The expression inside an `as` / `satisfies` / `!` / `<T>` wrapper, or undefined
- * when this is not one. Returns `unknown` because none of those node types are in
- * ESTree's union, so a typed return would need a cast at every call site.
+ * Returns `unknown`: none of these node types are in ESTree's union, so a
+ * typed return would need a cast at every call site.
  */
 export function typeAssertionOperand(node: unknown): unknown {
   if (!isObject(node)) return undefined;
@@ -148,7 +134,6 @@ export function typeAssertionOperand(node: unknown): unknown {
   return "expression" in node ? node.expression : undefined;
 }
 
-/** The expression with every type-assertion wrapper peeled off. */
 function withoutTypeAssertions(node: unknown): unknown {
   let current = node;
 
@@ -163,10 +148,6 @@ function withoutTypeAssertions(node: unknown): unknown {
 }
 
 /**
- * True for `this.page`, including under any `!`, `as`, or `satisfies`. Those wrap
- * the expression in a node the rule would otherwise fail to match, so an inline
- * locator written `this.page!.getByRole(...)` would go unreported.
- *
  * `this.#page` and `this[page]` are not it: the first is a different, private
  * field that happens to be spelled `page`, and the second is a dynamic lookup
  * whose key is only known at runtime.
@@ -195,7 +176,6 @@ function isObject(value: unknown): value is object {
   return typeof value === "object" && value !== null;
 }
 
-/** A getter or a property, so a plain method of that name is not a holder. */
 export function isLocatorHolder(member: Rule.Node | undefined): boolean {
   if (!member) return false;
 

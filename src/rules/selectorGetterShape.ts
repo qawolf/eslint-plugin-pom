@@ -9,21 +9,6 @@ import {
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * The locator holder is a private getter returning `as const`.
- *
- * ```ts
- * // Reported
- * get locators() {
- *   return { signInButton: this.page.getByRole("button") };
- * }
- *
- * // Expected
- * private get locators() {
- *   return { signInButton: this.page.getByRole("button") } as const;
- * }
- * ```
- */
 export const selectorGetterShapeRule: PomLintRule = {
   module: {
     create(context) {
@@ -31,9 +16,9 @@ export const selectorGetterShapeRule: PomLintRule = {
 
       return {
         MethodDefinition(node) {
-          if (!isHolderKey(node)) return;
-
           const name = holderName(node);
+          if (!name) return;
+
           if (node.kind !== "get") {
             context.report({ data: { name }, messageId: "mustBeGetter", node });
             return;
@@ -56,13 +41,10 @@ export const selectorGetterShapeRule: PomLintRule = {
         },
 
         PropertyDefinition(node) {
-          if (!isHolderKey(node)) return;
+          const name = holderName(node);
+          if (!name) return;
 
-          context.report({
-            data: { name: holderName(node) },
-            messageId: "useGetter",
-            node,
-          });
+          context.report({ data: { name }, messageId: "useGetter", node });
         },
       };
     },
@@ -92,21 +74,12 @@ export const selectorGetterShapeRule: PomLintRule = {
   severity: "warn",
 };
 
-function isHolderKey(node: Rule.Node): boolean {
+function holderName(node: Rule.Node): string | undefined {
   if (node.type !== "MethodDefinition" && node.type !== "PropertyDefinition")
-    return false;
+    return undefined;
+  if (node.key.type !== "Identifier") return undefined;
 
-  return node.key.type === "Identifier" && isLocatorHolderName(node.key.name);
-}
-
-function holderName(node: Rule.Node): string {
-  if (
-    (node.type === "MethodDefinition" || node.type === "PropertyDefinition") &&
-    node.key.type === "Identifier"
-  )
-    return node.key.name;
-
-  return "locators";
+  return isLocatorHolderName(node.key.name) ? node.key.name : undefined;
 }
 
 function returnedExpression(node: Rule.Node): Expression | undefined {
@@ -122,10 +95,6 @@ function returnedExpression(node: Rule.Node): Expression | undefined {
   return undefined;
 }
 
-/**
- * Walks the whole wrapper chain rather than only the outermost node, so
- * `({ … } as const) satisfies Locators` still counts.
- */
 function isAsConst(returned: Expression): boolean {
   let current: unknown = returned;
 

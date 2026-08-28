@@ -7,19 +7,6 @@ import {
 } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * Sibling page objects come from the registry, not from `new`.
- *
- * ```ts
- * // Reported
- * async goToDashboard() { return new DashboardPage(this.page); }
- *
- * // Expected
- * async goToDashboard(): Promise<DashboardPage> {
- *   return this.create("DashboardPage");
- * }
- * ```
- */
 export const noDirectPomConstructionRule: PomLintRule = {
   module: {
     create(context) {

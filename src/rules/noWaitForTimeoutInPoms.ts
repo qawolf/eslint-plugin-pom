@@ -8,17 +8,6 @@ const bannedWaits = new Map([
   ["waitForTimeout", "fixedSleep"],
 ]);
 
-/**
- * Wait for the thing, not for a duration.
- *
- * ```ts
- * // Reported
- * await this.page.waitForTimeout(2000);
- *
- * // Expected
- * await this.locators.banner.waitFor();
- * ```
- */
 export const noWaitForTimeoutInPomsRule: PomLintRule = {
   module: {
     create(context) {
@@ -61,10 +50,6 @@ export const noWaitForTimeoutInPomsRule: PomLintRule = {
   severity: "warn",
 };
 
-/**
- * A fixed sleep is allowed when the author says what it is waiting on, and the
- * review checklist takes that on the same line or the line above.
- */
 function hasJustification(context: Rule.RuleContext, node: Rule.Node): boolean {
   const callLine = node.loc?.start.line;
   if (callLine === undefined) return false;

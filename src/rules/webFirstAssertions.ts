@@ -18,17 +18,6 @@ const webFirstEquivalents = new Map([
   ["textContent", "toHaveText(expected)"],
 ]);
 
-/**
- * Assert on the locator, not on a value read from it.
- *
- * ```ts
- * // Reported
- * expect(await this.locators.banner.isVisible()).toBe(true);
- *
- * // Expected
- * await expect(this.locators.banner).toBeVisible();
- * ```
- */
 export const webFirstAssertionsRule: PomLintRule = {
   module: {
     create(context) {

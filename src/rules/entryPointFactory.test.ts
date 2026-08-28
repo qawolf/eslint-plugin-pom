@@ -1,17 +1,5 @@
-import tsParser from "@typescript-eslint/parser";
-import { RuleTester } from "eslint";
-
+import { pagePath, ruleTester } from "../testHelpers.js";
 import { entryPointFactoryRule } from "./entryPointFactory.js";
-
-const ruleTester = new RuleTester({
-  languageOptions: {
-    ecmaVersion: "latest",
-    parser: tsParser,
-    sourceType: "module",
-  },
-});
-
-const pagePath = "src/pages/sign-in-page.ts";
 
 const missingCreate = [{ messageId: "missingCreate" }];
 
