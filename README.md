@@ -72,6 +72,34 @@ Applies to `.ts` files under `src/pages/`.
 
 Ships at `warn`.
 
+### `entry-point-factory`
+
+A class extending `EntryPointPageObject` needs a `static create()`.
+
+```ts
+// Reported
+export class SignInPage extends EntryPointPageObject {
+  async signIn() { ... }
+}
+
+// Expected
+export class SignInPage extends EntryPointPageObject {
+  static async create(options: CreateOptions = {}): Promise<SignInPage> { ... }
+}
+```
+
+The entry point is the one page object a flow constructs itself, and `create` is
+what launches the browser and installs the page hooks before handing the instance
+back. Without it there is no way in, since the constructor is protected.
+
+A static _field_ named `create` does not satisfy it — only a static method does.
+`BasePageObject` and `SubPageObject` subclasses are untouched; a flow reaches
+those through `this.create(…)` on a page object it already holds.
+
+Applies to `.ts` files under `src/pages/`.
+
+Ships at `warn`.
+
 ### `no-direct-pom-construction`
 
 Sibling page objects come from the registry, not from `new`.

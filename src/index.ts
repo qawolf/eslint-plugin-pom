@@ -1,4 +1,5 @@
 import { assertExpectPairingRule } from "./rules/assertExpectPairing.js";
+import { entryPointFactoryRule } from "./rules/entryPointFactory.js";
 import { noDirectPomConstructionRule } from "./rules/noDirectPomConstruction.js";
 import { noInlineLocatorInPageObjectRule } from "./rules/noInlineLocatorInPageObject.js";
 import { noPublicConstructorRule } from "./rules/noPublicConstructor.js";
@@ -16,6 +17,7 @@ export const rulePrefix = "@qawolf/pom-lint";
 
 const allRules: PomLintRule[] = [
   assertExpectPairingRule,
+  entryPointFactoryRule,
   noDirectPomConstructionRule,
   noInlineLocatorInPageObjectRule,
   noPublicConstructorRule,
