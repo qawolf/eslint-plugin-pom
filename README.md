@@ -162,6 +162,43 @@ Applies to `.ts` files under `src/pages/`.
 
 Ships at `warn`.
 
+### `no-legacy-selectors`
+
+Bans XPath, the deprecated engine prefixes, and the `>>` engine chain in
+`locator()` / `frameLocator()` strings.
+
+```ts
+// Reported
+this.page.locator("//div[@id='ok']"); // noXpath
+this.page.locator("xpath=//div"); // noXpath
+this.page.locator("text=Sign in"); // noLegacyEngine
+this.page.locator("form >> button"); // noChainCombinator
+
+// Expected
+this.page.getByRole("button", { name: "Sign in" });
+this.page.locator("form").locator("button");
+```
+
+XPath breaks on any markup reshuffle and cannot pierce shadow DOM. The
+`css=` / `text=` / `id=` prefixes are v1 engine syntax — modern Playwright takes a
+bare CSS string or a `getBy*` method.
+
+Not banned: `:text-is()`, `:has-text()` and friends. Those are current Playwright
+pseudo-classes, not the legacy `text=` engine — the canonical `dynamicLocators`
+example uses `:text-is()`. A prefix only counts at the start of the string, so an
+ordinary attribute selector like `[data-id=submit]` is left alone.
+
+The static chunks of a template literal are checked too, since a prefix survives
+interpolation. A fully dynamic selector has nothing to read and is skipped.
+
+Every message ends with the same caveat: a selector carried over from a recorded
+flow should only be rewritten when the replacement targets the same element.
+Satisfying a linter is not a reason to change what a test clicks.
+
+Applies to `.ts` files under `src/pages/`.
+
+Ships at `warn`.
+
 ### `no-public-constructor`
 
 `BasePageObject` declares `protected constructor(page: Page)`. Redeclaring one
