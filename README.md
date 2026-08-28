@@ -72,6 +72,42 @@ Applies to `.ts` files under `src/pages/`.
 
 Ships at `warn`.
 
+### `correct-base-class`
+
+A class under `src/pages/` that reads `this.page` has to extend a page-object
+base.
+
+```ts
+// Reported
+export class SignInPage {                          // missingBase
+  async signIn() { await this.page.getByRole("button").click(); }
+}
+export class SignInPage extends EventEmitter { … }  // unknownBase
+
+// Expected
+export class SignInPage extends BasePageObject { … }
+```
+
+The base class is what supplies `this.page`, `this.create()` and the page hooks —
+a class reading `this.page` without one only compiles because `page` was declared
+by hand, and it gets none of the rest.
+
+A superclass named like a page object (`…Page`, `…Component`, `…Modal`) is
+accepted rather than reported: extending another page object is legitimate and
+names no base class. A class that never touches `this.page` — a data factory, a
+helper — is left alone, even in `src/pages/`. Class expressions are covered, since
+the rule visits the class body.
+
+One thing the rule cannot check: a workspace provisioned before `@qawolf/pom`
+keeps its own copy of the kit under `src/lib/`, and the two must not be mixed —
+each carries its own page registry, so a page object registered through one is
+invisible to `this.create()` in the other. Import the base from wherever the rest
+of the workspace imports it.
+
+Applies to `.ts` files under `src/pages/`.
+
+Ships at `warn`.
+
 ### `entry-point-factory`
 
 A class extending `EntryPointPageObject` needs a `static create()`.
