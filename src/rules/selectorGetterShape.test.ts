@@ -28,14 +28,12 @@ ruleTester.run("selector-getter-shape", selectorGetterShapeRule.module, {
       errors: [{ messageId: "useGetter" }],
     },
     {
-      // Both problems on one getter.
       ...pageObject(
         `get locators() { return { ok: this.page.locator("#ok") }; }`,
       ),
       errors: [{ messageId: "mustBePrivate" }, { messageId: "missingAsConst" }],
     },
     {
-      // The mobile spelling.
       ...pageObject(
         `private get selectors() { return { ok: this.page.locator("#ok") }; }`,
       ),
@@ -55,7 +53,6 @@ ruleTester.run("selector-getter-shape", selectorGetterShapeRule.module, {
       errors: [{ messageId: "missingAsConst" }],
     },
     {
-      // `as SomeType` is not `as const`.
       ...pageObject(
         `private get locators() { return { ok: this.page.locator("#ok") } as Locators; }`,
       ),
@@ -102,7 +99,6 @@ ruleTester.run("selector-getter-shape", selectorGetterShapeRule.module, {
       ),
     },
     {
-      // Not a holder name, so its shape is not this rule's business.
       ...pageObject(`get header() { return this.page.getByRole("banner"); }`),
     },
     {
@@ -110,7 +106,6 @@ ruleTester.run("selector-getter-shape", selectorGetterShapeRule.module, {
       ...pageObject(`private get locators() { throw Error("not ready"); }`),
     },
     {
-      // Outside `src/pages/`.
       code: `class Helper { get locators() { return { ok: 1 }; } }`,
       filename: "src/flows/checkout.flow.ts",
     },

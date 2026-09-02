@@ -1,10 +1,6 @@
 import { isPageObjectContext } from "../pageObject/index.js";
 import type { PomLintRule } from "../types.js";
 
-/**
- * Each suggestion carries its argument shape, since the value being compared
- * moves out of `expect(...)` and into the matcher.
- */
 const webFirstEquivalents = new Map([
   ["count", "toHaveCount(expected)"],
   ["getAttribute", "toHaveAttribute(name, expected)"],

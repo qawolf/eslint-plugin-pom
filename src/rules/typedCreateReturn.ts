@@ -76,10 +76,6 @@ export const typedCreateReturnRule: PomLintRule = {
   severity: "warn",
 };
 
-/**
- * The page name in `return this.create("Name")` or
- * `return TargetPage.createFromPage(page)`, if that is what this is.
- */
 function createdPageName(node: Rule.Node): string | undefined {
   if (node.type !== "ReturnStatement") return undefined;
   const returned = node.argument;

@@ -63,7 +63,6 @@ ruleTester.run("entry-point-factory", entryPointFactoryRule.module, {
       filename: pagePath,
     },
     {
-      // Only entry points need the factory.
       code: `export class DashboardPage extends BasePageObject {
         async open() {}
       }`,
