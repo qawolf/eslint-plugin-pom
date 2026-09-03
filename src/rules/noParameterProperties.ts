@@ -38,7 +38,12 @@ export const noParameterPropertiesRule: PomLintRule = {
 
           context.report({
             data: {
-              accessibility: property.accessibility ?? "private",
+              accessibility: [
+                property.accessibility,
+                property.readonly && "readonly",
+              ]
+                .filter(Boolean)
+                .join(" "),
               name,
               type: annotation
                 ? context.sourceCode.getText(annotation as Node)
