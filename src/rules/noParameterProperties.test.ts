@@ -8,7 +8,11 @@ ruleTester.run("no-parameter-properties", noParameterPropertiesRule.module, {
       code: `class Api { constructor(private readonly client: ApiClient) {} }`,
       errors: [
         {
-          data: { accessibility: "private", name: "client", type: "ApiClient" },
+          data: {
+            accessibility: "private readonly",
+            name: "client",
+            type: "ApiClient",
+          },
           messageId: "parameterProperty",
         },
       ],
@@ -16,7 +20,12 @@ ruleTester.run("no-parameter-properties", noParameterPropertiesRule.module, {
     {
       // `readonly` alone is still a parameter property.
       code: `class Api { constructor(readonly baseUrl: string) {} }`,
-      errors: [{ messageId: "parameterProperty" }],
+      errors: [
+        {
+          data: { accessibility: "readonly", name: "baseUrl", type: "string" },
+          messageId: "parameterProperty",
+        },
+      ],
     },
     {
       // With a default value.

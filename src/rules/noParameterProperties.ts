@@ -71,6 +71,7 @@ export const noParameterPropertiesRule: PomLintRule = {
 /** The TypeScript parser's node for `private x: T` in a constructor. */
 type ParameterProperty = {
   accessibility?: "private" | "protected" | "public";
+  readonly?: boolean;
   parameter:
     | { left: Parameter; type: "AssignmentPattern" }
     | (Parameter & { type: "Identifier" });
