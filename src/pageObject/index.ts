@@ -1,8 +1,18 @@
 import type { Rule } from "eslint";
+import type {
+  ClassDeclaration,
+  ClassExpression,
+  MethodDefinition,
+  PropertyDefinition,
+} from "estree";
 
 import { pagesDirectoryFrom } from "../settings.js";
 
 const pageObjectExtensions = [".ts", ".mts", ".cts"];
+
+export type ClassNode = ClassDeclaration | ClassExpression;
+
+export type ClassMember = MethodDefinition | PropertyDefinition;
 
 /**
  * Hosts disagree on the path shape (`file:///src/pages/…` percent-encoded,
@@ -58,6 +68,14 @@ export function isPageObjectName(name: string): boolean {
   return pageObjectSuffixes.some((suffix) => name.endsWith(suffix));
 }
 
+/** Extends one of the kit's base classes outright; no name-based guess. */
+function extendsPageObjectBase(node: ClassNode): boolean {
+  const { superClass } = node;
+  return (
+    superClass?.type === "Identifier" && pageObjectBases.has(superClass.name)
+  );
+}
+
 /**
  * A class extending a page-object base, or named like one -- which covers a page
  * object extending another page object, where no base class is named. Keeps a
@@ -69,13 +87,10 @@ export function isPageObjectClass(node: Rule.Node | undefined): boolean {
     return false;
 
   if (node.id && isPageObjectName(node.id.name)) return true;
+  if (extendsPageObjectBase(node)) return true;
 
   const { superClass } = node;
-  if (superClass?.type !== "Identifier") return false;
-
-  return (
-    pageObjectBases.has(superClass.name) || isPageObjectName(superClass.name)
-  );
+  return superClass?.type === "Identifier" && isPageObjectName(superClass.name);
 }
 
 export function enclosingClass(node: Rule.Node): Rule.Node | undefined {
@@ -94,8 +109,56 @@ export function enclosingClass(node: Rule.Node): Rule.Node | undefined {
   return undefined;
 }
 
+/**
+ * The other way to recognise a page object: by its superclass rather than its
+ * path. Path scoping (`isPageObjectContext`) is the tighter fit for a
+ * directory reserved for page objects; the superclass is what a rule uses when
+ * it must work on a file anywhere in the workspace, and it is what the
+ * flow-side rules pair with. Blind spot: a page object extending *another*
+ * page object names no base class here, and following that chain would need
+ * type information.
+ *
+ * The nearest enclosing class, when it is a page object by superclass. A
+ * class nested inside a page-object method is judged on its own superclass,
+ * not the outer one.
+ */
+export function enclosingPageObject(node: Rule.Node): ClassNode | undefined {
+  let current: Rule.Node | null = node.parent;
+
+  while (current) {
+    if (current.type === "ClassBody") {
+      const declaration = current.parent;
+      const isClass =
+        declaration.type === "ClassDeclaration" ||
+        declaration.type === "ClassExpression";
+
+      return isClass && extendsPageObjectBase(declaration)
+        ? declaration
+        : undefined;
+    }
+
+    current = current.parent;
+  }
+
+  return undefined;
+}
+
+/**
+ * The static name of a member key: `locators` or `"locators"`. A computed or
+ * private key has no name here.
+ */
+export function memberName(member: ClassMember): string | undefined {
+  if (member.computed) return undefined;
+
+  const { key } = member;
+  if (key.type === "Identifier") return key.name;
+  if (key.type === "Literal" && typeof key.value === "string") return key.value;
+
+  return undefined;
+}
+
 /** `selectors` and `dynamicSelectors` are the mobile spellings. */
-const locatorHolderNames = new Set([
+export const locatorHolderNames = new Set([
   "dynamicLocators",
   "dynamicSelectors",
   "locators",
@@ -176,7 +239,10 @@ function isObject(value: unknown): value is object {
   return typeof value === "object" && value !== null;
 }
 
-export function isLocatorHolder(member: Rule.Node | undefined): boolean {
+/** A getter or a property, so a plain method of that name is not a holder. */
+export function isLocatorHolder(
+  member: ClassMember | Rule.Node | undefined,
+): boolean {
   if (!member) return false;
 
   const isHolderShape =
@@ -184,7 +250,6 @@ export function isLocatorHolder(member: Rule.Node | undefined): boolean {
     (member.type === "MethodDefinition" && member.kind === "get");
   if (!isHolderShape) return false;
 
-  return (
-    member.key.type === "Identifier" && locatorHolderNames.has(member.key.name)
-  );
+  const name = memberName(member);
+  return name !== undefined && locatorHolderNames.has(name);
 }
